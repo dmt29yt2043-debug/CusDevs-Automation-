@@ -58,7 +58,7 @@ export default async function SessionDetailPage({
           <Link href="/admin/sessions" className="text-sm text-gray-400 hover:text-gray-600 mb-2 block">
             ← All Sessions
           </Link>
-          <h1 className="text-2xl font-bold">Session {id.slice(0, 8)}</h1>
+          <h1 className="text-2xl font-bold">Session Details</h1>
           <p className="text-gray-500 mt-1">{session.project.name}</p>
         </div>
         <span

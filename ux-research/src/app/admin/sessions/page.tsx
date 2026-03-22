@@ -28,7 +28,7 @@ export default async function SessionsPage() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100 text-sm text-gray-500">
-              <th className="text-left px-4 py-3 font-medium">ID</th>
+              <th className="text-left px-4 py-3 font-medium">#</th>
               <th className="text-left px-4 py-3 font-medium">Project</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
               <th className="text-left px-4 py-3 font-medium">Duration</th>
@@ -40,16 +40,17 @@ export default async function SessionsPage() {
             </tr>
           </thead>
           <tbody>
-            {sessions.map((s) => {
+            {sessions.map((s, i) => {
               const screener = s.participant?.screenerAnswersJson as Record<string, string> | null;
+              const num = sessions.length - i;
               return (
                 <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <Link
                       href={`/admin/sessions/${s.id}`}
-                      className="text-sm text-blue-600 hover:underline font-mono"
+                      className="text-sm text-blue-600 hover:underline font-medium"
                     >
-                      {s.id.slice(0, 8)}
+                      #{num}
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-sm">{s.project.name}</td>
