@@ -1,9 +1,156 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, CSSProperties } from "react";
 import type { ScenarioStep } from "@/lib/types/scenario";
 import { AudioRecorder, AudioRecorderState, uploadAudio } from "@/lib/audio";
 import { trackEvent } from "@/lib/event-tracking";
+
+// Shared styles
+const styles = {
+  container: { display: "flex", flexDirection: "column", gap: "12px" } as CSSProperties,
+  text: { fontSize: "14px", lineHeight: "1.6", color: "#374151", margin: 0 } as CSSProperties,
+  textSmall: { fontSize: "12px", color: "#9ca3af", margin: 0 } as CSSProperties,
+  btn: {
+    width: "100%",
+    padding: "10px 16px",
+    backgroundColor: "#2563eb",
+    color: "#fff",
+    border: "none",
+    borderRadius: "10px",
+    fontSize: "14px",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "background-color 0.15s",
+    fontFamily: "inherit",
+  } as CSSProperties,
+  btnSecondary: {
+    width: "100%",
+    padding: "10px 16px",
+    backgroundColor: "#f3f4f6",
+    color: "#374151",
+    border: "1px solid #e5e7eb",
+    borderRadius: "10px",
+    fontSize: "14px",
+    fontWeight: 500,
+    cursor: "pointer",
+    transition: "background-color 0.15s",
+    fontFamily: "inherit",
+  } as CSSProperties,
+  btnDanger: {
+    width: "100%",
+    padding: "10px 16px",
+    backgroundColor: "#ef4444",
+    color: "#fff",
+    border: "none",
+    borderRadius: "10px",
+    fontSize: "14px",
+    fontWeight: 600,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+    fontFamily: "inherit",
+  } as CSSProperties,
+  btnDark: {
+    width: "100%",
+    padding: "10px 16px",
+    backgroundColor: "#1f2937",
+    color: "#fff",
+    border: "none",
+    borderRadius: "10px",
+    fontSize: "14px",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  } as CSSProperties,
+  btnSuccess: {
+    width: "100%",
+    padding: "10px 16px",
+    backgroundColor: "#16a34a",
+    color: "#fff",
+    border: "none",
+    borderRadius: "10px",
+    fontSize: "14px",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  } as CSSProperties,
+  btnDisabled: { opacity: 0.5, cursor: "not-allowed" } as CSSProperties,
+  ratingGrid: { display: "flex", flexWrap: "wrap", gap: "6px" } as CSSProperties,
+  ratingBtn: (selected: boolean) => ({
+    width: "32px",
+    height: "32px",
+    borderRadius: "8px",
+    fontSize: "12px",
+    fontWeight: 600,
+    border: selected ? "2px solid #2563eb" : "1px solid #e5e7eb",
+    backgroundColor: selected ? "#2563eb" : "#fff",
+    color: selected ? "#fff" : "#374151",
+    cursor: "pointer",
+    transition: "all 0.15s",
+    fontFamily: "inherit",
+  }) as CSSProperties,
+  ratingLabels: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "11px",
+    color: "#9ca3af",
+  } as CSSProperties,
+  textarea: {
+    width: "100%",
+    border: "1px solid #e5e7eb",
+    borderRadius: "10px",
+    padding: "10px 12px",
+    fontSize: "14px",
+    resize: "none" as const,
+    fontFamily: "inherit",
+    outline: "none",
+    boxSizing: "border-box" as const,
+  } as CSSProperties,
+  errorBox: {
+    backgroundColor: "#fef2f2",
+    color: "#dc2626",
+    fontSize: "12px",
+    borderRadius: "8px",
+    padding: "8px 12px",
+  } as CSSProperties,
+  recordingBar: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#fef2f2",
+    borderRadius: "10px",
+    padding: "12px",
+  } as CSSProperties,
+  recordingDot: {
+    width: "10px",
+    height: "10px",
+    backgroundColor: "#ef4444",
+    borderRadius: "50%",
+    animation: "pulse 1.5s infinite",
+  } as CSSProperties,
+  successBox: {
+    backgroundColor: "#f0fdf4",
+    borderRadius: "10px",
+    padding: "12px",
+    fontSize: "14px",
+    color: "#15803d",
+  } as CSSProperties,
+  progressBg: {
+    height: "6px",
+    backgroundColor: "#f3f4f6",
+    borderRadius: "999px",
+    overflow: "hidden",
+  } as CSSProperties,
+  progressFill: (pct: number) => ({
+    height: "6px",
+    backgroundColor: "#2563eb",
+    borderRadius: "999px",
+    transition: "width 0.3s",
+    width: `${pct}%`,
+  }) as CSSProperties,
+};
 
 interface StepRendererProps {
   step: ScenarioStep;
@@ -32,44 +179,24 @@ export default function StepRenderer({ step, sessionId, onComplete }: StepRender
     case "end":
       return <EndRenderer step={step} onComplete={onComplete} />;
     default:
-      return <div className="rw-text-sm rw-text-red-500">Unknown step type</div>;
+      return <div style={{ fontSize: "13px", color: "#ef4444" }}>Unknown step type</div>;
   }
 }
 
-function MessageRenderer({
-  step,
-  onComplete,
-}: {
-  step: ScenarioStep;
-  onComplete: () => void;
-}) {
+function MessageRenderer({ step, onComplete }: { step: ScenarioStep; onComplete: () => void }) {
   return (
-    <div className="rw-space-y-3">
-      <p className="rw-text-sm rw-leading-relaxed">{step.text}</p>
-      <button
-        onClick={onComplete}
-        className="rw-w-full rw-py-2 rw-bg-blue-600 rw-text-white rw-rounded-lg rw-text-sm rw-font-medium hover:rw-bg-blue-500"
-      >
-        Next
-      </button>
+    <div style={styles.container}>
+      <p style={styles.text}>{step.text}</p>
+      <button style={styles.btn} onClick={onComplete}>Next</button>
     </div>
   );
 }
 
-function ButtonRenderer({
-  step,
-  onComplete,
-}: {
-  step: ScenarioStep;
-  onComplete: () => void;
-}) {
+function ButtonRenderer({ step, onComplete }: { step: ScenarioStep; onComplete: () => void }) {
   return (
-    <button
-      onClick={onComplete}
-      className="rw-w-full rw-py-2.5 rw-bg-blue-600 rw-text-white rw-rounded-lg rw-text-sm rw-font-medium hover:rw-bg-blue-500"
-    >
-      {step.text}
-    </button>
+    <div style={styles.container}>
+      <button style={styles.btn} onClick={onComplete}>{step.text}</button>
+    </div>
   );
 }
 
@@ -86,31 +213,23 @@ function RatingRenderer({
   const values = Array.from({ length: max - min + 1 }, (_, i) => min + i);
 
   return (
-    <div className="rw-space-y-3">
-      <p className="rw-text-sm rw-leading-relaxed">{step.text}</p>
-      <div className="rw-flex rw-flex-wrap rw-gap-1.5">
+    <div style={styles.container}>
+      <p style={styles.text}>{step.text}</p>
+      <div style={styles.ratingGrid}>
         {values.map((v) => (
-          <button
-            key={v}
-            onClick={() => setSelected(v)}
-            className={`rw-w-8 rw-h-8 rw-rounded-lg rw-text-xs rw-font-medium rw-border ${
-              selected === v
-                ? "rw-bg-blue-600 rw-text-white rw-border-blue-600"
-                : "rw-bg-white rw-text-gray-700 rw-border-gray-200 hover:rw-border-blue-300"
-            }`}
-          >
+          <button key={v} onClick={() => setSelected(v)} style={styles.ratingBtn(selected === v)}>
             {v}
           </button>
         ))}
       </div>
-      <div className="rw-flex rw-justify-between rw-text-xs rw-text-gray-400">
+      <div style={styles.ratingLabels}>
         <span>Not clear at all</span>
         <span>Very clear</span>
       </div>
       {selected !== null && (
         <button
+          style={styles.btn}
           onClick={() => onComplete({ responseType: "rating", value: { rating: selected } })}
-          className="rw-w-full rw-py-2 rw-bg-blue-600 rw-text-white rw-rounded-lg rw-text-sm rw-font-medium hover:rw-bg-blue-500"
         >
           Confirm
         </button>
@@ -129,19 +248,18 @@ function TextInputRenderer({
   const [text, setText] = useState("");
 
   return (
-    <div className="rw-space-y-3">
-      <p className="rw-text-sm rw-leading-relaxed">{step.text}</p>
+    <div style={styles.container}>
+      <p style={styles.text}>{step.text}</p>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={step.placeholder || "Your answer..."}
         rows={3}
-        className="rw-w-full rw-border rw-border-gray-200 rw-rounded-lg rw-px-3 rw-py-2 rw-text-sm rw-resize-none"
+        style={styles.textarea}
       />
       <button
-        onClick={() => onComplete({ responseType: "text", value: { text } })}
-        disabled={!text.trim()}
-        className="rw-w-full rw-py-2 rw-bg-blue-600 rw-text-white rw-rounded-lg rw-text-sm rw-font-medium hover:rw-bg-blue-500 disabled:rw-bg-gray-300"
+        style={{ ...styles.btn, ...(text.trim() ? {} : styles.btnDisabled) }}
+        onClick={() => text.trim() && onComplete({ responseType: "text", value: { text } })}
       >
         Submit
       </button>
@@ -171,12 +289,7 @@ function AudioPromptRenderer({
 
   const maxDuration = step.maxDurationSec || 90;
 
-  const handleStateChange = useCallback((s: AudioRecorderState) => {
-    setState(s);
-    if (!s.isRecording && s.duration > 0) {
-      // Recording stopped (possibly auto by max duration)
-    }
-  }, []);
+  const handleStateChange = useCallback((s: AudioRecorderState) => setState(s), []);
 
   const startRecording = async () => {
     recorderRef.current = new AudioRecorder(handleStateChange, maxDuration);
@@ -205,61 +318,42 @@ function AudioPromptRenderer({
     }
   };
 
-  const formatTime = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
+  const fmt = (sec: number) => `${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, "0")}`;
 
   return (
-    <div className="rw-space-y-3">
-      <p className="rw-text-sm rw-leading-relaxed">{step.text}</p>
+    <div style={styles.container}>
+      <p style={styles.text}>{step.text}</p>
 
-      {state.error && (
-        <div className="rw-bg-red-50 rw-text-red-600 rw-text-xs rw-rounded-lg rw-p-2">
-          {state.error}
-        </div>
-      )}
+      {state.error && <div style={styles.errorBox}>{state.error}</div>}
 
       {!state.isRecording && !blobRef.current && (
-        <button
-          onClick={startRecording}
-          className="rw-w-full rw-py-2.5 rw-bg-red-500 rw-text-white rw-rounded-lg rw-text-sm rw-font-medium hover:rw-bg-red-400 rw-flex rw-items-center rw-justify-center rw-gap-2"
-        >
-          <span className="rw-w-3 rw-h-3 rw-bg-white rw-rounded-full" />
+        <button style={styles.btnDanger} onClick={startRecording}>
+          <span style={{ width: 12, height: 12, backgroundColor: "#fff", borderRadius: "50%", display: "inline-block" }} />
           Start Recording
         </button>
       )}
 
       {state.isRecording && (
-        <div className="rw-space-y-2">
-          <div className="rw-flex rw-items-center rw-justify-between rw-bg-red-50 rw-rounded-lg rw-p-3">
-            <div className="rw-flex rw-items-center rw-gap-2">
-              <span className="rw-w-2.5 rw-h-2.5 rw-bg-red-500 rw-rounded-full rw-animate-pulse" />
-              <span className="rw-text-sm rw-text-red-700">Recording</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={styles.recordingBar}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={styles.recordingDot} />
+              <span style={{ fontSize: "14px", color: "#b91c1c" }}>Recording</span>
             </div>
-            <span className="rw-text-sm rw-font-mono rw-text-red-700">
-              {formatTime(state.duration)} / {formatTime(maxDuration)}
+            <span style={{ fontSize: "14px", fontFamily: "monospace", color: "#b91c1c" }}>
+              {fmt(state.duration)} / {fmt(maxDuration)}
             </span>
           </div>
-          <button
-            onClick={stopRecording}
-            className="rw-w-full rw-py-2 rw-bg-gray-800 rw-text-white rw-rounded-lg rw-text-sm rw-font-medium hover:rw-bg-gray-700"
-          >
-            Stop Recording
-          </button>
+          <button style={styles.btnDark} onClick={stopRecording}>Stop Recording</button>
         </div>
       )}
 
       {!state.isRecording && blobRef.current && !uploaded && (
-        <div className="rw-space-y-2">
-          <div className="rw-bg-green-50 rw-rounded-lg rw-p-3 rw-text-sm rw-text-green-700">
-            Recorded: {formatTime(state.duration)}
-          </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={styles.successBox}>Recorded: {fmt(state.duration)}</div>
           <button
+            style={{ ...styles.btn, ...(uploading ? styles.btnDisabled : {}) }}
             onClick={handleUpload}
-            disabled={uploading}
-            className="rw-w-full rw-py-2 rw-bg-blue-600 rw-text-white rw-rounded-lg rw-text-sm rw-font-medium hover:rw-bg-blue-500 disabled:rw-bg-gray-300"
           >
             {uploading ? "Uploading..." : "Submit Recording"}
           </button>
@@ -282,9 +376,7 @@ function WaitRenderer({
   useEffect(() => {
     const interval = setInterval(() => {
       setElapsed((prev) => {
-        if (prev + 1 >= duration) {
-          clearInterval(interval);
-        }
+        if (prev + 1 >= duration) clearInterval(interval);
         return prev + 1;
       });
     }, 1000);
@@ -295,24 +387,16 @@ function WaitRenderer({
   const pct = Math.min((elapsed / duration) * 100, 100);
 
   return (
-    <div className="rw-space-y-3">
-      <p className="rw-text-sm rw-leading-relaxed">{step.text}</p>
-      <div className="rw-h-1.5 rw-bg-gray-100 rw-rounded-full">
-        <div
-          className="rw-h-1.5 rw-bg-blue-500 rw-rounded-full rw-transition-all"
-          style={{ width: `${pct}%` }}
-        />
+    <div style={styles.container}>
+      <p style={styles.text}>{step.text}</p>
+      <div style={styles.progressBg}>
+        <div style={styles.progressFill(pct)} />
       </div>
-      <div className="rw-text-xs rw-text-gray-400 rw-text-center">
-        {elapsed >= duration
-          ? "Time is up"
-          : `${duration - elapsed}s remaining`}
-      </div>
+      <p style={{ ...styles.textSmall, textAlign: "center" }}>
+        {elapsed >= duration ? "Time is up" : `${duration - elapsed}s remaining`}
+      </p>
       {canSkip && (
-        <button
-          onClick={onComplete}
-          className="rw-w-full rw-py-2 rw-bg-gray-200 rw-text-gray-700 rw-rounded-lg rw-text-sm hover:rw-bg-gray-300"
-        >
+        <button style={styles.btnSecondary} onClick={onComplete}>
           {elapsed >= duration ? "Next" : "Skip ahead"}
         </button>
       )}
@@ -320,25 +404,12 @@ function WaitRenderer({
   );
 }
 
-function EndRenderer({
-  step,
-  onComplete,
-}: {
-  step: ScenarioStep;
-  onComplete: () => void;
-}) {
+function EndRenderer({ step, onComplete }: { step: ScenarioStep; onComplete: () => void }) {
   return (
-    <div className="rw-space-y-3">
-      <div className="rw-text-center">
-        <span className="rw-text-2xl">🎉</span>
-      </div>
-      <p className="rw-text-sm rw-leading-relaxed rw-text-center">{step.text}</p>
-      <button
-        onClick={onComplete}
-        className="rw-w-full rw-py-2 rw-bg-green-600 rw-text-white rw-rounded-lg rw-text-sm rw-font-medium hover:rw-bg-green-500"
-      >
-        Finish
-      </button>
+    <div style={styles.container}>
+      <div style={{ textAlign: "center", fontSize: "28px" }}>🎉</div>
+      <p style={{ ...styles.text, textAlign: "center" }}>{step.text}</p>
+      <button style={styles.btnSuccess} onClick={onComplete}>Finish</button>
     </div>
   );
 }
