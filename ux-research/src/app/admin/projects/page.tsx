@@ -39,7 +39,7 @@ export default async function ProjectsPage() {
                   Participant Link
                 </Link>
                 <Link
-                  href="/admin/sessions"
+                  href={`/admin/sessions?project=${project.id}`}
                   className="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
                 >
                   Sessions

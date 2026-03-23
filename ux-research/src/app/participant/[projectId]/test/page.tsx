@@ -20,7 +20,7 @@ export default function TestPage() {
   const [testSiteUrl, setTestSiteUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
+  const lastMousePos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const stored = sessionStorage.getItem(`session-${projectId}`);
@@ -53,49 +53,55 @@ export default function TestPage() {
     return () => stopTracking();
   }, [projectId, router]);
 
-  // Click-through overlay: captures click position, then briefly hides to let click pass to iframe
-  const handleOverlayClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const overlay = overlayRef.current;
-      const iframe = iframeRef.current;
-      if (!overlay || !iframe) return;
+  // Track mouse position globally so we know where user clicked when iframe steals focus
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
-      // Record viewport dimensions with click for heatmap reconstruction
-      const rect = iframe.getBoundingClientRect();
-      const relX = ((e.clientX - rect.left) / rect.width) * 100; // percentage
-      const relY = ((e.clientY - rect.top) / rect.height) * 100;
+  // Detect clicks inside iframe via blur: when user clicks iframe, window loses focus
+  useEffect(() => {
+    if (!testSiteUrl) return;
 
-      trackEvent({
-        eventType: "click",
-        pageUrl: testSiteUrl || undefined,
-        x: e.clientX,
-        y: e.clientY,
-        payloadJson: {
-          relativeX: Math.round(relX * 100) / 100,
-          relativeY: Math.round(relY * 100) / 100,
-          viewportWidth: rect.width,
-          viewportHeight: rect.height,
-        },
-      });
-
-      // Briefly hide overlay so click passes through to iframe
-      overlay.style.pointerEvents = "none";
+    const handleBlur = () => {
+      // Check if iframe has focus (meaning user clicked inside it)
       setTimeout(() => {
-        if (overlay) overlay.style.pointerEvents = "auto";
-      }, 300);
-    },
-    [testSiteUrl]
-  );
+        if (document.activeElement === iframeRef.current) {
+          const iframe = iframeRef.current;
+          if (!iframe) return;
 
-  // Track scroll on overlay (user scrolls iframe via overlay)
-  const handleOverlayScroll = useCallback(() => {
-    // We can't read iframe scroll position cross-origin,
-    // but we log that scrolling happened
-    trackEvent({
-      eventType: "scroll_depth",
-      pageUrl: testSiteUrl || undefined,
-      payloadJson: { note: "scroll_on_tested_page" },
-    });
+          const rect = iframe.getBoundingClientRect();
+          const { x, y } = lastMousePos.current;
+          const relX = ((x - rect.left) / rect.width) * 100;
+          const relY = ((y - rect.top) / rect.height) * 100;
+
+          // Only track if mouse was over iframe area
+          if (relX >= 0 && relX <= 100 && relY >= 0 && relY <= 100) {
+            trackEvent({
+              eventType: "click",
+              pageUrl: testSiteUrl,
+              x,
+              y,
+              payloadJson: {
+                relativeX: Math.round(relX * 100) / 100,
+                relativeY: Math.round(relY * 100) / 100,
+                viewportWidth: rect.width,
+                viewportHeight: rect.height,
+              },
+            });
+          }
+
+          // Re-focus window so we catch the next blur
+          window.focus();
+        }
+      }, 0);
+    };
+
+    window.addEventListener("blur", handleBlur);
+    return () => window.removeEventListener("blur", handleBlur);
   }, [testSiteUrl]);
 
   const handleComplete = useCallback(async () => {
@@ -136,31 +142,12 @@ export default function TestPage() {
         sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
       />
 
-      {/* Transparent click-capture overlay on top of iframe */}
-      <div
-        ref={overlayRef}
-        onClick={handleOverlayClick}
-        onWheel={handleOverlayScroll}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          zIndex: 5,
-          cursor: "default",
-        }}
-      />
-
-      {/* Widget sits above overlay */}
       {scenarioJson && (
-        <div style={{ position: "relative", zIndex: 10 }}>
-          <ResearchWidget
-            scenarioJson={scenarioJson}
-            sessionId={sessionInfo.sessionId}
-            onComplete={handleComplete}
-          />
-        </div>
+        <ResearchWidget
+          scenarioJson={scenarioJson}
+          sessionId={sessionInfo.sessionId}
+          onComplete={handleComplete}
+        />
       )}
     </div>
   );
