@@ -10,8 +10,6 @@ interface SessionInfo {
   scenarioId: string;
 }
 
-const TEST_SITE_URL = "http://pulseup.srv1362562.hstgr.cloud/";
-
 export default function TestPage() {
   const params = useParams();
   const router = useRouter();
@@ -19,6 +17,7 @@ export default function TestPage() {
 
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
   const [scenarioJson, setScenarioJson] = useState<Record<string, unknown> | null>(null);
+  const [testSiteUrl, setTestSiteUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +31,6 @@ export default function TestPage() {
     setSessionInfo(info);
 
     initTracking(info.sessionId);
-    trackPageView(TEST_SITE_URL);
 
     fetch(`/api/sessions/${info.sessionId}`, {
       method: "PATCH",
@@ -40,12 +38,16 @@ export default function TestPage() {
       body: JSON.stringify({ status: "in_progress" }),
     });
 
-    fetch(`/api/projects/${projectId}/scenario`)
-      .then((r) => r.json())
-      .then((scenario) => {
-        setScenarioJson(scenario.definitionJson);
-        setLoading(false);
-      });
+    // Fetch project (for testSiteUrl) and scenario in parallel
+    Promise.all([
+      fetch(`/api/projects/${projectId}`).then((r) => r.json()),
+      fetch(`/api/projects/${projectId}/scenario`).then((r) => r.json()),
+    ]).then(([project, scenario]) => {
+      setTestSiteUrl(project.testSiteUrl || null);
+      setScenarioJson(scenario.definitionJson);
+      trackPageView(project.testSiteUrl);
+      setLoading(false);
+    });
 
     return () => stopTracking();
   }, [projectId, router]);
@@ -65,7 +67,7 @@ export default function TestPage() {
     router.push(`/participant/${projectId}/thank-you`);
   }, [sessionInfo, projectId, router]);
 
-  if (loading || !sessionInfo) {
+  if (loading || !sessionInfo || !testSiteUrl) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-400">Loading test...</div>
@@ -75,9 +77,8 @@ export default function TestPage() {
 
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
-      {/* Real product site in iframe */}
       <iframe
-        src={TEST_SITE_URL}
+        src={testSiteUrl}
         title="Product under test"
         style={{
           width: "100%",
@@ -88,7 +89,6 @@ export default function TestPage() {
         sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
       />
 
-      {/* Research Widget overlay */}
       {scenarioJson && (
         <ResearchWidget
           scenarioJson={scenarioJson}

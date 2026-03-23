@@ -44,36 +44,51 @@ const scenarioDefinition = {
 async function main() {
   console.log("Seeding database...");
 
-  const project = await prisma.project.upsert({
+  // Project 1: PulseKids (staging)
+  const project1 = await prisma.project.upsert({
     where: { slug: "pulsekids-research" },
-    update: {},
+    update: { testSiteUrl: "https://pulseup.srv1362562.hstgr.cloud/" },
     create: {
       name: "PulseKids Research",
       slug: "pulsekids-research",
-      description:
-        "UX research for a parenting product — finding weekend activities for kids.",
+      description: "UX research for a parenting product — finding weekend activities for kids.",
+      testSiteUrl: "https://pulseup.srv1362562.hstgr.cloud/",
     },
   });
+  console.log(`Project: ${project1.name} (${project1.id})`);
 
-  console.log(`Created project: ${project.name} (${project.id})`);
-
-  const existingScenario = await prisma.scenario.findFirst({
-    where: { projectId: project.id, name: "Weekend activity discovery test v1" },
+  // Project 2: PulseUp (production)
+  const project2 = await prisma.project.upsert({
+    where: { slug: "pulseup-research" },
+    update: { testSiteUrl: "https://pulseup.me/" },
+    create: {
+      name: "PulseUp Research",
+      slug: "pulseup-research",
+      description: "UX research for PulseUp — finding weekend activities for kids.",
+      testSiteUrl: "https://pulseup.me/",
+    },
   });
+  console.log(`Project: ${project2.name} (${project2.id})`);
 
-  if (!existingScenario) {
-    const scenario = await prisma.scenario.create({
-      data: {
-        projectId: project.id,
-        name: "Weekend activity discovery test v1",
-        version: 1,
-        definitionJson: scenarioDefinition,
-        isActive: true,
-      },
+  // Add scenario to both projects
+  for (const project of [project1, project2]) {
+    const existing = await prisma.scenario.findFirst({
+      where: { projectId: project.id, name: "Weekend activity discovery test v1" },
     });
-    console.log(`Created scenario: ${scenario.name} (${scenario.id})`);
-  } else {
-    console.log(`Scenario already exists: ${existingScenario.name}`);
+    if (!existing) {
+      const scenario = await prisma.scenario.create({
+        data: {
+          projectId: project.id,
+          name: "Weekend activity discovery test v1",
+          version: 1,
+          definitionJson: scenarioDefinition,
+          isActive: true,
+        },
+      });
+      console.log(`  Scenario: ${scenario.name} (${scenario.id})`);
+    } else {
+      console.log(`  Scenario exists: ${existing.name}`);
+    }
   }
 
   console.log("Seed complete.");
