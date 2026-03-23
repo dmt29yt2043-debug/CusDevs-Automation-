@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import ResearchWidget from "@/components/research-widget/ResearchWidget";
 import { initTracking, trackPageView, stopTracking, trackEvent } from "@/lib/event-tracking";
 
@@ -19,6 +19,8 @@ export default function TestPage() {
   const [scenarioJson, setScenarioJson] = useState<Record<string, unknown> | null>(null);
   const [testSiteUrl, setTestSiteUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const stored = sessionStorage.getItem(`session-${projectId}`);
@@ -38,7 +40,6 @@ export default function TestPage() {
       body: JSON.stringify({ status: "in_progress" }),
     });
 
-    // Fetch project (for testSiteUrl) and scenario in parallel
     Promise.all([
       fetch(`/api/projects/${projectId}`).then((r) => r.json()),
       fetch(`/api/projects/${projectId}/scenario`).then((r) => r.json()),
@@ -51,6 +52,51 @@ export default function TestPage() {
 
     return () => stopTracking();
   }, [projectId, router]);
+
+  // Click-through overlay: captures click position, then briefly hides to let click pass to iframe
+  const handleOverlayClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const overlay = overlayRef.current;
+      const iframe = iframeRef.current;
+      if (!overlay || !iframe) return;
+
+      // Record viewport dimensions with click for heatmap reconstruction
+      const rect = iframe.getBoundingClientRect();
+      const relX = ((e.clientX - rect.left) / rect.width) * 100; // percentage
+      const relY = ((e.clientY - rect.top) / rect.height) * 100;
+
+      trackEvent({
+        eventType: "click",
+        pageUrl: testSiteUrl || undefined,
+        x: e.clientX,
+        y: e.clientY,
+        payloadJson: {
+          relativeX: Math.round(relX * 100) / 100,
+          relativeY: Math.round(relY * 100) / 100,
+          viewportWidth: rect.width,
+          viewportHeight: rect.height,
+        },
+      });
+
+      // Briefly hide overlay so click passes through to iframe
+      overlay.style.pointerEvents = "none";
+      setTimeout(() => {
+        if (overlay) overlay.style.pointerEvents = "auto";
+      }, 300);
+    },
+    [testSiteUrl]
+  );
+
+  // Track scroll on overlay (user scrolls iframe via overlay)
+  const handleOverlayScroll = useCallback(() => {
+    // We can't read iframe scroll position cross-origin,
+    // but we log that scrolling happened
+    trackEvent({
+      eventType: "scroll_depth",
+      pageUrl: testSiteUrl || undefined,
+      payloadJson: { note: "scroll_on_tested_page" },
+    });
+  }, [testSiteUrl]);
 
   const handleComplete = useCallback(async () => {
     if (!sessionInfo) return;
@@ -78,6 +124,7 @@ export default function TestPage() {
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
       <iframe
+        ref={iframeRef}
         src={testSiteUrl}
         title="Product under test"
         style={{
@@ -89,12 +136,31 @@ export default function TestPage() {
         sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
       />
 
+      {/* Transparent click-capture overlay on top of iframe */}
+      <div
+        ref={overlayRef}
+        onClick={handleOverlayClick}
+        onWheel={handleOverlayScroll}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          zIndex: 5,
+          cursor: "default",
+        }}
+      />
+
+      {/* Widget sits above overlay */}
       {scenarioJson && (
-        <ResearchWidget
-          scenarioJson={scenarioJson}
-          sessionId={sessionInfo.sessionId}
-          onComplete={handleComplete}
-        />
+        <div style={{ position: "relative", zIndex: 10 }}>
+          <ResearchWidget
+            scenarioJson={scenarioJson}
+            sessionId={sessionInfo.sessionId}
+            onComplete={handleComplete}
+          />
+        </div>
       )}
     </div>
   );

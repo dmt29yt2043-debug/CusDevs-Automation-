@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { getAudioUrl } from "@/lib/storage";
 import Link from "next/link";
+import ClickMap from "@/components/admin/ClickMap";
 
 export const dynamic = "force-dynamic";
 
@@ -286,6 +287,23 @@ export default async function SessionDetailPage({
   const screener = session.participant?.screenerAnswersJson as Record<string, string> | null;
   const timeline = buildTimeline(session.events, session.responses, session.audioAssets);
 
+  // Prepare click data for ClickMap component
+  const clickEvents = session.events
+    .filter((e) => e.eventType === "click")
+    .map((e) => ({
+      id: e.id,
+      x: e.x,
+      y: e.y,
+      createdAt: e.createdAt.toISOString(),
+      elementSelector: e.elementSelector,
+      payloadJson: e.payloadJson as {
+        relativeX?: number;
+        relativeY?: number;
+        viewportWidth?: number;
+        viewportHeight?: number;
+      } | null,
+    }));
+
   // Group timeline by phase
   let currentPhase = "";
 
@@ -357,6 +375,15 @@ export default async function SessionDetailPage({
             )}
           </div>
         </div>
+      )}
+
+      {/* Click Map */}
+      {clickEvents.length > 0 && session.project.testSiteUrl && (
+        <ClickMap
+          clicks={clickEvents}
+          testSiteUrl={session.project.testSiteUrl}
+          sessionStartedAt={session.startedAt.toISOString()}
+        />
       )}
 
       {/* Timeline */}
