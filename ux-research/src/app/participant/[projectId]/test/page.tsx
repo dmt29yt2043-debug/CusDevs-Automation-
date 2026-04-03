@@ -63,11 +63,16 @@ export default function TestPage() {
   }, []);
 
   // Detect clicks inside iframe via blur: when user clicks iframe, window loses focus
+  // Re-arm detection when mouse moves back to parent (no window.focus() to avoid stealing input focus)
+  const blurArmed = useRef(true);
+
   useEffect(() => {
     if (!testSiteUrl) return;
 
     const handleBlur = () => {
-      // Check if iframe has focus (meaning user clicked inside it)
+      if (!blurArmed.current) return;
+      blurArmed.current = false; // prevent duplicate fires until mouse re-enters parent
+
       setTimeout(() => {
         if (document.activeElement === iframeRef.current) {
           const iframe = iframeRef.current;
@@ -78,7 +83,6 @@ export default function TestPage() {
           const relX = ((x - rect.left) / rect.width) * 100;
           const relY = ((y - rect.top) / rect.height) * 100;
 
-          // Only track if mouse was over iframe area
           if (relX >= 0 && relX <= 100 && relY >= 0 && relY <= 100) {
             trackEvent({
               eventType: "click",
@@ -93,15 +97,21 @@ export default function TestPage() {
               },
             });
           }
-
-          // Re-focus window so we catch the next blur
-          window.focus();
         }
       }, 0);
     };
 
+    // Re-arm blur detection when mouse moves back over the parent page
+    const handleMouseMove = () => {
+      blurArmed.current = true;
+    };
+
     window.addEventListener("blur", handleBlur);
-    return () => window.removeEventListener("blur", handleBlur);
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
   }, [testSiteUrl]);
 
   const handleComplete = useCallback(async () => {
