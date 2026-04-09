@@ -70,8 +70,21 @@ async function main() {
   });
   console.log(`Project: ${project2.name} (${project2.id})`);
 
-  // Add scenario to both projects
-  for (const project of [project1, project2]) {
+  // Project 3: PulseUp V2
+  const project3 = await prisma.project.upsert({
+    where: { slug: "pulseup-v2-research" },
+    update: { testSiteUrl: "https://pulseup-v2.srv1362562.hstgr.cloud/" },
+    create: {
+      name: "PulseUp V2 Research",
+      slug: "pulseup-v2-research",
+      description: "UX research for PulseUp V2 — new dark theme version.",
+      testSiteUrl: "https://pulseup-v2.srv1362562.hstgr.cloud/",
+    },
+  });
+  console.log(`Project: ${project3.name} (${project3.id})`);
+
+  // Add scenario to all projects
+  for (const project of [project1, project2, project3]) {
     const existing = await prisma.scenario.findFirst({
       where: { projectId: project.id, name: "Weekend activity discovery test v1" },
     });

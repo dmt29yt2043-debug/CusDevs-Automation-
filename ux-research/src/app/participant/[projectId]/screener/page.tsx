@@ -4,7 +4,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import ParticipantLayout from "@/components/participant-flow/ParticipantLayout";
 
-// Reusable chip button for single-select
 function ChipGroup({
   options,
   value,
@@ -21,11 +20,19 @@ function ChipGroup({
           key={opt.value}
           type="button"
           onClick={() => onChange(value === opt.value ? "" : opt.value)}
-          className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
-            value === opt.value
-              ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-              : "bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50"
-          }`}
+          className="transition-all duration-150 active:scale-95"
+          style={{
+            padding: "10px 18px",
+            borderRadius: 12,
+            fontSize: 14,
+            fontWeight: 500,
+            border: value === opt.value ? "2px solid #e91e63" : "2px solid rgba(255,255,255,0.1)",
+            background: value === opt.value
+              ? "linear-gradient(135deg, rgba(233,30,99,0.2), rgba(255,96,144,0.15))"
+              : "#1e1b4b",
+            color: value === opt.value ? "#fff" : "#9ca3af",
+            cursor: "pointer",
+          }}
         >
           {opt.label}
         </button>
@@ -34,7 +41,6 @@ function ChipGroup({
   );
 }
 
-// Multi-select chip group
 function MultiChipGroup({
   options,
   values,
@@ -59,17 +65,159 @@ function MultiChipGroup({
             key={opt.value}
             type="button"
             onClick={() => toggle(opt.value)}
-            className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
-              selected
-                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                : "bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50"
-            }`}
+            className="transition-all duration-150 active:scale-95"
+            style={{
+              padding: "10px 18px",
+              borderRadius: 12,
+              fontSize: 14,
+              fontWeight: 500,
+              border: selected ? "2px solid #e91e63" : "2px solid rgba(255,255,255,0.1)",
+              background: selected
+                ? "linear-gradient(135deg, rgba(233,30,99,0.2), rgba(255,96,144,0.15))"
+                : "#1e1b4b",
+              color: selected ? "#fff" : "#9ca3af",
+              cursor: "pointer",
+            }}
           >
-            {selected && <span className="mr-1.5">✓</span>}
+            {selected && <span style={{ marginRight: 6 }}>✓</span>}
             {opt.label}
           </button>
         );
       })}
+    </div>
+  );
+}
+
+interface Child {
+  age: string;
+  gender: "boy" | "girl" | "";
+}
+
+function ChildrenInput({
+  children,
+  onChange,
+}: {
+  children: Child[];
+  onChange: (children: Child[]) => void;
+}) {
+  const updateChild = (index: number, field: keyof Child, value: string) => {
+    const updated = [...children];
+    updated[index] = { ...updated[index], [field]: value };
+    onChange(updated);
+  };
+
+  const removeChild = (index: number) => {
+    if (children.length <= 1) return;
+    onChange(children.filter((_, i) => i !== index));
+  };
+
+  const addChild = () => {
+    onChange([...children, { age: "", gender: "" }]);
+  };
+
+  return (
+    <div className="space-y-3">
+      {children.map((child, i) => (
+        <div key={i} className="flex items-center gap-2">
+          {/* Age input */}
+          <input
+            type="number"
+            min="0"
+            max="18"
+            value={child.age}
+            onChange={(e) => updateChild(i, "age", e.target.value)}
+            placeholder="Age"
+            style={{
+              width: 70,
+              background: "#1e1b4b",
+              border: "2px solid rgba(255,255,255,0.1)",
+              borderRadius: 12,
+              padding: "10px 12px",
+              fontSize: 14,
+              color: "#fff",
+              outline: "none",
+              textAlign: "center",
+            }}
+          />
+
+          {/* Gender buttons */}
+          <button
+            type="button"
+            onClick={() => updateChild(i, "gender", child.gender === "boy" ? "" : "boy")}
+            className="transition-all duration-150 active:scale-95"
+            style={{
+              padding: "10px 16px",
+              borderRadius: 12,
+              fontSize: 13,
+              fontWeight: 500,
+              border: child.gender === "boy" ? "2px solid #3b82f6" : "2px solid rgba(255,255,255,0.1)",
+              background: child.gender === "boy" ? "rgba(59,130,246,0.2)" : "#1e1b4b",
+              color: child.gender === "boy" ? "#93c5fd" : "#9ca3af",
+              cursor: "pointer",
+            }}
+          >
+            Boy
+          </button>
+          <button
+            type="button"
+            onClick={() => updateChild(i, "gender", child.gender === "girl" ? "" : "girl")}
+            className="transition-all duration-150 active:scale-95"
+            style={{
+              padding: "10px 16px",
+              borderRadius: 12,
+              fontSize: 13,
+              fontWeight: 500,
+              border: child.gender === "girl" ? "2px solid #e91e63" : "2px solid rgba(255,255,255,0.1)",
+              background: child.gender === "girl" ? "rgba(233,30,99,0.2)" : "#1e1b4b",
+              color: child.gender === "girl" ? "#f9a8d4" : "#9ca3af",
+              cursor: "pointer",
+            }}
+          >
+            Girl
+          </button>
+
+          {/* Remove button */}
+          {children.length > 1 && (
+            <button
+              type="button"
+              onClick={() => removeChild(i)}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                border: "none",
+                background: "rgba(255,255,255,0.05)",
+                color: "#6b7280",
+                cursor: "pointer",
+                fontSize: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      ))}
+
+      {/* Add child button */}
+      <button
+        type="button"
+        onClick={addChild}
+        style={{
+          padding: "8px 16px",
+          borderRadius: 10,
+          fontSize: 13,
+          fontWeight: 500,
+          border: "1px dashed rgba(255,255,255,0.15)",
+          background: "transparent",
+          color: "#6b7280",
+          cursor: "pointer",
+        }}
+      >
+        + Add another child
+      </button>
     </div>
   );
 }
@@ -80,9 +228,10 @@ export default function ScreenerPage() {
   const projectId = params.projectId as string;
   const [submitting, setSubmitting] = useState(false);
 
+  const [children, setChildren] = useState<Child[]>([{ age: "", gender: "" }]);
+
   const [answers, setAnswers] = useState({
     isParent: "",
-    childAge: "",
     city: "",
     searchMethod: [] as string[],
     frequency: "",
@@ -95,18 +244,52 @@ export default function ScreenerPage() {
     setSubmitting(true);
 
     try {
+      const childrenData = children
+        .filter((c) => c.age)
+        .map((c) => `${c.age}y${c.gender ? ` (${c.gender})` : ""}`)
+        .join(", ");
+
       const submitData = {
         ...answers,
+        childAge: childrenData,
         searchMethod: answers.searchMethod.join(", "),
       };
+
+      // Store screener data for test page URL personalization
+      const firstChildAge = children.find((c) => c.age)?.age || "";
+      let ageGroup = "6-8";
+      const ageNum = parseInt(firstChildAge);
+      if (ageNum >= 3 && ageNum <= 5) ageGroup = "3-5";
+      else if (ageNum >= 6 && ageNum <= 8) ageGroup = "6-8";
+      else if (ageNum >= 9 && ageNum <= 12) ageGroup = "9-12";
+      else if (ageNum >= 13) ageGroup = "13-14";
+
+      const cityLower = (answers.city || "").toLowerCase().trim();
+      const boroughMap: Record<string, string> = {
+        manhattan: "manhattan", brooklyn: "brooklyn", queens: "queens",
+        bronx: "bronx", "staten island": "staten_island",
+        "new york": "manhattan", nyc: "manhattan", ny: "manhattan",
+      };
+      const borough = boroughMap[cityLower] || "other";
+
+      sessionStorage.setItem(`screener-params-${projectId}`, JSON.stringify({
+        child_age: ageGroup,
+        borough,
+        interests: answers.searchMethod.length > 0
+          ? answers.searchMethod.map((m: string) => {
+              const map: Record<string, string> = {
+                search_engine: "outdoor", social: "outdoor", apps: "outdoor",
+                friends: "outdoor", chats: "outdoor", other: "outdoor",
+              };
+              return map[m] || "outdoor";
+            })
+          : ["outdoor"],
+      }));
 
       const pRes = await fetch("/api/participants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId,
-          screenerAnswers: submitData,
-        }),
+        body: JSON.stringify({ projectId, screenerAnswers: submitData }),
       });
       const participant = await pRes.json();
 
@@ -136,10 +319,7 @@ export default function ScreenerPage() {
       await fetch("/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: session.id,
-          eventType: "consent_accepted",
-        }),
+        body: JSON.stringify({ sessionId: session.id, eventType: "consent_accepted" }),
       });
 
       await fetch("/api/events", {
@@ -160,19 +340,20 @@ export default function ScreenerPage() {
   };
 
   return (
-    <ParticipantLayout step={3} totalSteps={6}>
+    <ParticipantLayout step={2} totalSteps={5}>
       <div className="space-y-7">
         <div>
-          <h1 className="text-2xl font-semibold">A few questions about you</h1>
-          <p className="text-gray-500 text-sm mt-2">
+          <h1 className="text-2xl font-bold" style={{ color: "#fff" }}>
+            A few questions about you
+          </h1>
+          <p className="text-sm mt-2" style={{ color: "#6b7280" }}>
             This helps us understand the context of your experience.
           </p>
         </div>
 
         <div className="space-y-6">
-          {/* Are you a parent? */}
           <div>
-            <label className="block text-sm font-medium mb-2.5">
+            <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
               Are you a parent?
             </label>
             <ChipGroup
@@ -185,42 +366,38 @@ export default function ScreenerPage() {
             />
           </div>
 
-          {/* Child age */}
           <div>
-            <label className="block text-sm font-medium mb-2.5">
-              Age of your child / children
+            <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
+              Your children
             </label>
-            <input
-              type="text"
-              value={answers.childAge}
-              onChange={(e) =>
-                setAnswers((p) => ({ ...p, childAge: e.target.value }))
-              }
-              placeholder="e.g. 3 years, 7 years"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+            <ChildrenInput children={children} onChange={setChildren} />
           </div>
 
-          {/* City */}
           <div>
-            <label className="block text-sm font-medium mb-2.5">City</label>
+            <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>City</label>
             <input
               type="text"
               value={answers.city}
-              onChange={(e) =>
-                setAnswers((p) => ({ ...p, city: e.target.value }))
-              }
+              onChange={(e) => setAnswers((p) => ({ ...p, city: e.target.value }))}
               placeholder="New York"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              style={{
+                width: "100%",
+                background: "#1e1b4b",
+                border: "2px solid rgba(255,255,255,0.1)",
+                borderRadius: 12,
+                padding: "12px 16px",
+                fontSize: 14,
+                color: "#fff",
+                outline: "none",
+              }}
             />
           </div>
 
-          {/* How do you find activities — MULTI SELECT */}
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1" style={{ color: "#fff" }}>
               How do you usually find activities for kids?
             </label>
-            <p className="text-xs text-gray-400 mb-2.5">Select all that apply</p>
+            <p className="text-xs mb-2.5" style={{ color: "#6b7280" }}>Select all that apply</p>
             <MultiChipGroup
               options={[
                 { value: "search_engine", label: "Google / Search" },
@@ -235,9 +412,8 @@ export default function ScreenerPage() {
             />
           </div>
 
-          {/* Frequency */}
           <div>
-            <label className="block text-sm font-medium mb-2.5">
+            <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
               How often do you go to events with kids?
             </label>
             <ChipGroup
@@ -256,7 +432,17 @@ export default function ScreenerPage() {
         <button
           onClick={handleSubmit}
           disabled={!isValid || submitting}
-          className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-500 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
+          className="w-full transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{
+            padding: "14px 0",
+            background: isValid && !submitting ? "linear-gradient(135deg, #e91e63, #ff6090)" : "#1e1b4b",
+            color: "#fff",
+            border: "none",
+            borderRadius: 12,
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: isValid && !submitting ? "pointer" : "not-allowed",
+          }}
         >
           {submitting ? "Creating session..." : "Continue"}
         </button>

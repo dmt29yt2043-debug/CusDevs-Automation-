@@ -44,9 +44,26 @@ export default function TestPage() {
       fetch(`/api/projects/${projectId}`).then((r) => r.json()),
       fetch(`/api/projects/${projectId}/scenario`).then((r) => r.json()),
     ]).then(([project, scenario]) => {
-      setTestSiteUrl(project.testSiteUrl || null);
+      // Build personalized URL from screener data
+      let siteUrl = project.testSiteUrl || "";
+      const screenerRaw = sessionStorage.getItem(`screener-params-${projectId}`);
+      if (screenerRaw && siteUrl) {
+        try {
+          const params = JSON.parse(screenerRaw);
+          const url = new URL(siteUrl.replace(/\/$/, "") + "/results");
+          url.searchParams.set("source", "research");
+          if (params.child_age) url.searchParams.set("child_age", params.child_age);
+          if (params.borough) url.searchParams.set("borough", params.borough);
+          if (params.interests?.length) url.searchParams.set("interests", params.interests.join(","));
+          siteUrl = url.toString();
+        } catch {
+          // fallback to base URL
+        }
+      }
+
+      setTestSiteUrl(siteUrl);
       setScenarioJson(scenario.definitionJson);
-      trackPageView(project.testSiteUrl);
+      trackPageView(siteUrl);
       setLoading(false);
     });
 

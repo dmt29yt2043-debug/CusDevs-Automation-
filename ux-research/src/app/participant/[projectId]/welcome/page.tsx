@@ -22,43 +22,80 @@ export default function WelcomePage() {
       .then(setProject);
   }, [projectId]);
 
+  const handleAccept = () => {
+    sessionStorage.setItem(
+      `consent-${projectId}`,
+      JSON.stringify({ participation: true, tracking: true, audio: true })
+    );
+    router.push(`/participant/${projectId}/screener`);
+  };
+
   if (!project) {
     return (
       <ParticipantLayout>
-        <div className="text-center text-gray-400">Loading...</div>
+        <div className="text-center" style={{ color: "#6b7280" }}>Loading...</div>
       </ParticipantLayout>
     );
   }
 
   return (
-    <ParticipantLayout step={1} totalSteps={6}>
-      <div className="text-center space-y-6">
-        <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto">
-          <span className="text-2xl">🔬</span>
+    <ParticipantLayout step={1} totalSteps={5}>
+      <div className="space-y-6">
+        {/* Welcome */}
+        <div className="text-center space-y-3">
+          <h1 className="text-2xl font-bold" style={{ color: "#fff" }}>
+            {project.name}
+          </h1>
+          <p className="text-sm leading-relaxed" style={{ color: "#9ca3af" }}>
+            {project.description || "Welcome to the study!"}
+          </p>
         </div>
-        <h1 className="text-2xl font-semibold">{project.name}</h1>
-        <p className="text-gray-600 leading-relaxed">
-          {project.description || "Welcome to the study!"}
-        </p>
-        <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-500 space-y-2">
-          <div className="flex items-center gap-2">
-            <span>⏱</span>
-            <span>Takes ~5-10 minutes</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>🎤</span>
-            <span>Microphone needed for voice responses</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>🖥</span>
-            <span>Best experienced on desktop</span>
-          </div>
-        </div>
-        <button
-          onClick={() => router.push(`/participant/${projectId}/consent`)}
-          className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-500 transition-colors"
+
+        {/* Info — prominent */}
+        <div
+          className="rounded-xl p-5 text-sm space-y-3"
+          style={{
+            background: "linear-gradient(135deg, rgba(233,30,99,0.12), rgba(255,96,144,0.08))",
+            border: "1px solid rgba(233,30,99,0.25)",
+          }}
         >
-          Start Study
+          <div className="flex items-center gap-3" style={{ color: "#fff" }}>
+            <span className="text-lg">⏱</span>
+            <span className="font-medium">Takes ~5-10 minutes</span>
+          </div>
+          <div className="flex items-center gap-3" style={{ color: "#fff" }}>
+            <span className="text-lg">🎤</span>
+            <span className="font-medium">Microphone needed for voice responses</span>
+          </div>
+          <div className="flex items-center gap-3" style={{ color: "#fff" }}>
+            <span className="text-lg">🖥</span>
+            <span className="font-medium">Best experienced on desktop</span>
+          </div>
+        </div>
+
+        {/* Consent — subtle */}
+        <div className="space-y-2">
+          <p className="text-xs" style={{ color: "#6b7280" }}>By continuing, you agree to:</p>
+          <div className="space-y-1.5">
+            {[
+              "Voluntary participation — you can stop at any time",
+              "Activity recording — clicks, scrolls, and navigation",
+              "Voice responses — recorded through browser microphone",
+            ].map((text) => (
+              <div key={text} className="flex items-center gap-2 px-1">
+                <span style={{ color: "#4b5563", fontSize: 10 }}>&#10003;</span>
+                <span className="text-xs" style={{ color: "#6b7280" }}>{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={handleAccept}
+          className="w-full py-3.5 rounded-xl font-medium text-sm transition-all hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, #e91e63, #ff6090)", color: "#fff", border: "none" }}
+        >
+          I Accept & Start Study
         </button>
       </div>
     </ParticipantLayout>
