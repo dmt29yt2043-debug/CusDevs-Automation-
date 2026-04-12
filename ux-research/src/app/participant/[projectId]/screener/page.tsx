@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import ParticipantLayout from "@/components/participant-flow/ParticipantLayout";
 
 function ChipGroup({
@@ -238,9 +238,37 @@ export default function ScreenerPage() {
   });
 
   const isValid = answers.isParent && answers.city;
+  const [autoSubmit, setAutoSubmit] = useState(false);
+
+  // Secret shortcut: Ctrl+Shift+K → auto-fill and skip
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === "K") {
+        e.preventDefault();
+        setChildren([{ age: "6", gender: "boy" }]);
+        setAnswers({
+          isParent: "yes",
+          city: "Manhattan",
+          searchMethod: ["social", "friends"],
+          frequency: "weekly",
+        });
+        setAutoSubmit(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Auto-submit when flag is set and form is valid
+  const submitRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (autoSubmit && answers.isParent === "yes" && answers.city && submitRef.current) {
+      submitRef.current();
+    }
+  }, [autoSubmit, answers.isParent, answers.city]);
 
   const handleSubmit = async () => {
-    if (!isValid || submitting) return;
+    if ((!isValid && !autoSubmit) || submitting) return;
     setSubmitting(true);
 
     try {
@@ -335,6 +363,8 @@ export default function ScreenerPage() {
       setSubmitting(false);
     }
   };
+
+  submitRef.current = handleSubmit;
 
   // Not a parent — show disqualification screen
   if (answers.isParent === "no") {

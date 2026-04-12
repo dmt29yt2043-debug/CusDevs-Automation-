@@ -30,6 +30,18 @@ export default function WelcomePage() {
     router.push(`/participant/${projectId}/screener`);
   };
 
+  // Secret shortcut: Ctrl+Shift+K → skip welcome, go to screener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === "K") {
+        e.preventDefault();
+        handleAccept();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
+
   if (!project) {
     return (
       <ParticipantLayout>
