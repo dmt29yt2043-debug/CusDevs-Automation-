@@ -45,16 +45,19 @@ export default function TestPage() {
       fetch(`/api/projects/${projectId}/scenario`).then((r) => r.json()),
     ]).then(([project, scenario]) => {
       // Build personalized URL from screener data
+      // PulseUp V2 reads: source=quiz, child_age, borough, interests, pain
+      // and auto-applies filters + shows personalized "For You" tab
       let siteUrl = project.testSiteUrl || "";
       const screenerRaw = sessionStorage.getItem(`screener-params-${projectId}`);
       if (screenerRaw && siteUrl) {
         try {
           const params = JSON.parse(screenerRaw);
-          const url = new URL(siteUrl.replace(/\/$/, "") + "/results");
-          url.searchParams.set("source", "research");
+          const url = new URL(siteUrl.replace(/\/$/, "") + "/");
+          url.searchParams.set("source", "quiz");
           if (params.child_age) url.searchParams.set("child_age", params.child_age);
           if (params.borough) url.searchParams.set("borough", params.borough);
           if (params.interests?.length) url.searchParams.set("interests", params.interests.join(","));
+          if (params.pain) url.searchParams.set("pain", params.pain);
           siteUrl = url.toString();
         } catch {
           // fallback to base URL
@@ -166,7 +169,7 @@ export default function TestPage() {
           border: "none",
           display: "block",
         }}
-        sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+        allow="microphone; camera; geolocation"
       />
 
       {scenarioJson && (

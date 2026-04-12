@@ -256,13 +256,14 @@ export default function ScreenerPage() {
       };
 
       // Store screener data for test page URL personalization
+      // Maps to PulseUp V2 format: source=quiz, child_age, borough, interests, pain
       const firstChildAge = children.find((c) => c.age)?.age || "";
       let ageGroup = "6-8";
       const ageNum = parseInt(firstChildAge);
       if (ageNum >= 3 && ageNum <= 5) ageGroup = "3-5";
       else if (ageNum >= 6 && ageNum <= 8) ageGroup = "6-8";
       else if (ageNum >= 9 && ageNum <= 12) ageGroup = "9-12";
-      else if (ageNum >= 13) ageGroup = "13-14";
+      else if (ageNum >= 13) ageGroup = "13+";
 
       const cityLower = (answers.city || "").toLowerCase().trim();
       const boroughMap: Record<string, string> = {
@@ -270,20 +271,16 @@ export default function ScreenerPage() {
         bronx: "bronx", "staten island": "staten_island",
         "new york": "manhattan", nyc: "manhattan", ny: "manhattan",
       };
-      const borough = boroughMap[cityLower] || "other";
+      const borough = boroughMap[cityLower] || "manhattan";
+
+      // Default broad interests for general discovery
+      const interests = ["outdoor", "museums", "playgrounds"];
 
       sessionStorage.setItem(`screener-params-${projectId}`, JSON.stringify({
         child_age: ageGroup,
         borough,
-        interests: answers.searchMethod.length > 0
-          ? answers.searchMethod.map((m: string) => {
-              const map: Record<string, string> = {
-                search_engine: "outdoor", social: "outdoor", apps: "outdoor",
-                friends: "outdoor", chats: "outdoor", other: "outdoor",
-              };
-              return map[m] || "outdoor";
-            })
-          : ["outdoor"],
+        interests,
+        pain: "hard_to_choose",
       }));
 
       const pRes = await fetch("/api/participants", {
@@ -338,6 +335,45 @@ export default function ScreenerPage() {
       setSubmitting(false);
     }
   };
+
+  // Not a parent — show disqualification screen
+  if (answers.isParent === "no") {
+    return (
+      <ParticipantLayout step={2} totalSteps={5}>
+        <div className="text-center space-y-6 py-8">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
+            style={{ background: "rgba(233,30,99,0.15)" }}
+          >
+            <span className="text-2xl">🙏</span>
+          </div>
+          <h1 className="text-xl font-bold" style={{ color: "#fff" }}>
+            Thank you for your interest!
+          </h1>
+          <p className="text-sm leading-relaxed" style={{ color: "#9ca3af" }}>
+            This study is specifically designed for parents with children.
+            We appreciate you taking the time — hope to see you in future research!
+          </p>
+          <button
+            onClick={() => setAnswers((p) => ({ ...p, isParent: "" }))}
+            className="transition-all hover:opacity-80"
+            style={{
+              padding: "10px 20px",
+              borderRadius: 12,
+              fontSize: 13,
+              fontWeight: 500,
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "transparent",
+              color: "#6b7280",
+              cursor: "pointer",
+            }}
+          >
+            ← I am a parent, go back
+          </button>
+        </div>
+      </ParticipantLayout>
+    );
+  }
 
   return (
     <ParticipantLayout step={2} totalSteps={5}>

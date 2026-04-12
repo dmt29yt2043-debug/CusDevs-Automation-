@@ -7,7 +7,7 @@ const scenarioDefinition = {
     {
       id: "welcome-task",
       type: "message",
-      text: "Your task is to find a weekend morning activity for your child.",
+      text: "Your task is to find a weekend morning activity for your child. Take your time exploring the site.",
     },
     {
       id: "continue-1",
@@ -18,20 +18,20 @@ const scenarioDefinition = {
       id: "observe",
       type: "wait_for_time",
       durationSec: 60,
-      text: "Explore the website and try to complete the task.",
-    },
-    {
-      id: "clarity-rating",
-      type: "rating",
-      text: "How easy is it to use this website?",
-      min: 1,
-      max: 10,
+      text: "Take your time exploring the site...",
     },
     {
       id: "voice-feedback",
       type: "audio_prompt",
-      text: "Briefly describe what was clear and what was confusing.",
-      maxDurationSec: 90,
+      text: "Can you briefly walk us through your thinking? Please tell us why you took the actions you did, what you were looking for, and what influenced your choices on the site.",
+      maxDurationSec: 120,
+    },
+    {
+      id: "clarity-rating",
+      type: "rating",
+      text: "How easy was it to find what you were looking for?",
+      min: 1,
+      max: 10,
     },
     {
       id: "end",

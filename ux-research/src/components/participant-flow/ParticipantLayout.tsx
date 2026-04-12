@@ -16,7 +16,7 @@ export default function ParticipantLayout({
       className="min-h-screen flex flex-col items-center justify-center p-6"
       style={{ background: "#0f0d2e", color: "#fff" }}
     >
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-2xl">
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
           <Image
