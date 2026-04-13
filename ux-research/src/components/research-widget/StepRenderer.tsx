@@ -383,9 +383,18 @@ function AudioPromptRenderer({
 
   const fmt = (sec: number) => `${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, "0")}`;
 
+  const stepTitle = (step as { title?: string }).title;
+
   return (
     <div style={styles.container}>
-      <p style={styles.text}>{step.text}</p>
+      {stepTitle ? (
+        <div>
+          <p style={{ ...styles.text, fontWeight: 700, color: "#fff", marginBottom: 6 }}>{stepTitle}</p>
+          <p style={{ ...styles.text, fontSize: 13 }}>{step.text}</p>
+        </div>
+      ) : (
+        <p style={styles.text}>{step.text}</p>
+      )}
 
       {state.error && <div style={styles.errorBox}>{state.error}</div>}
 

@@ -192,6 +192,30 @@ export default function ResearchWidget({ scenarioJson, sessionId, onComplete }: 
 
       <div style={w.content}>
         <StepRenderer key={currentStep.id} step={currentStep} sessionId={sessionId} onComplete={handleStepComplete} />
+        {currentIndex > 0 && !waiting && (
+          <button
+            onClick={() => {
+              // Go back, skipping wait_for_time steps
+              let prevIndex = currentIndex - 1;
+              while (prevIndex > 0 && scenario.steps[prevIndex].type === "wait_for_time") {
+                prevIndex--;
+              }
+              setCurrentIndex(prevIndex);
+            }}
+            style={{
+              marginTop: 8,
+              padding: "4px 0",
+              border: "none",
+              background: "transparent",
+              color: "#6b7280",
+              fontSize: 12,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            ← Back
+          </button>
+        )}
       </div>
 
       <div style={w.progressBg}>
