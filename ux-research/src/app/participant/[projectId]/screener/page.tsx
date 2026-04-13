@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ParticipantLayout from "@/components/participant-flow/ParticipantLayout";
 
 function ChipGroup({
@@ -259,16 +259,24 @@ export default function ScreenerPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Auto-submit when flag is set and form is valid
-  const submitRef = useRef<(() => void) | null>(null);
-  useEffect(() => {
-    if (autoSubmit && answers.isParent === "yes" && answers.borough && submitRef.current) {
-      submitRef.current();
-    }
-  }, [autoSubmit, answers.isParent, answers.borough]);
+  const skipValidation = useRef(false);
 
-  const handleSubmit = async () => {
-    if ((!isValid && !autoSubmit) || submitting) return;
+  // Auto-submit when flag is set and form is valid
+  useEffect(() => {
+    if (autoSubmit && answers.isParent === "yes" && answers.borough && !submitting) {
+      skipValidation.current = true;
+      const timer = setTimeout(() => {
+        handleSubmitRef.current?.();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [autoSubmit, answers.isParent, answers.borough, submitting]);
+
+  const handleSubmitRef = useRef<(() => void) | null>(null);
+
+  const handleSubmit = useCallback(async () => {
+    if (submitting) return;
+    if (!skipValidation.current && (!answers.isParent || !answers.borough)) return;
     setSubmitting(true);
 
     try {
@@ -356,9 +364,9 @@ export default function ScreenerPage() {
       console.error("Error creating session:", err);
       setSubmitting(false);
     }
-  };
+  }, [answers, children, submitting, projectId, router]);
 
-  submitRef.current = handleSubmit;
+  handleSubmitRef.current = handleSubmit;
 
   // Not a parent — show disqualification screen
   if (answers.isParent === "no") {
@@ -496,6 +504,7 @@ export default function ScreenerPage() {
         </div>
 
         <button
+          id="screener-submit-btn"
           onClick={handleSubmit}
           disabled={!isValid || submitting}
           className="w-full transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
