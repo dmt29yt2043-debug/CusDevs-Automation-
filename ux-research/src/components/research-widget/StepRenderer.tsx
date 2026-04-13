@@ -286,14 +286,71 @@ function AudioPromptRenderer({
   const [uploaded, setUploaded] = useState(false);
   const recorderRef = useRef<AudioRecorder | null>(null);
   const blobRef = useRef<Blob | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animFrameRef = useRef<number>(0);
 
   const maxDuration = step.maxDurationSec || 90;
 
   const handleStateChange = useCallback((s: AudioRecorderState) => setState(s), []);
 
+  // Equalizer visualization
+  const drawEqualizer = useCallback(() => {
+    const canvas = canvasRef.current;
+    const analyser = analyserRef.current;
+    if (!canvas || !analyser) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    analyser.getByteFrequencyData(dataArray);
+
+    const width = canvas.width;
+    const height = canvas.height;
+    ctx.clearRect(0, 0, width, height);
+
+    const barCount = 24;
+    const barWidth = (width / barCount) - 2;
+    const step2 = Math.floor(bufferLength / barCount);
+
+    for (let i = 0; i < barCount; i++) {
+      const value = dataArray[i * step2];
+      const barHeight = (value / 255) * height * 0.9 + 2;
+      const x = i * (barWidth + 2);
+      const y = (height - barHeight) / 2;
+
+      const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+      gradient.addColorStop(0, "#ef4444");
+      gradient.addColorStop(1, "#f97316");
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.roundRect(x, y, barWidth, barHeight, 2);
+      ctx.fill();
+    }
+
+    animFrameRef.current = requestAnimationFrame(drawEqualizer);
+  }, []);
+
   const startRecording = async () => {
     recorderRef.current = new AudioRecorder(handleStateChange, maxDuration);
     await recorderRef.current.start();
+
+    // Set up analyser for equalizer
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const audioCtx = new AudioContext();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+      drawEqualizer();
+    } catch {
+      // Equalizer is optional — recording still works
+    }
+
     trackEvent({ eventType: "audio_record_started", payloadJson: { stepId: step.id } });
   };
 
@@ -301,19 +358,22 @@ function AudioPromptRenderer({
     if (!recorderRef.current) return;
     const blob = recorderRef.current.stop();
     blobRef.current = blob;
+    cancelAnimationFrame(animFrameRef.current);
+    analyserRef.current = null;
     trackEvent({ eventType: "audio_record_stopped", payloadJson: { stepId: step.id } });
+
+    // Auto-upload after stopping
+    if (blob) setTimeout(() => autoUpload(blob), 300);
   };
 
-  const handleUpload = async () => {
-    if (!blobRef.current) return;
+  const autoUpload = async (blob: Blob) => {
     setUploading(true);
     try {
-      const result = await uploadAudio(blobRef.current, sessionId, step.id, state.duration);
+      const result = await uploadAudio(blob, sessionId, step.id, state.duration);
       setUploaded(true);
       onComplete({ responseType: "audio", value: { audioAssetId: result.id } });
     } catch {
       setState((s) => ({ ...s, error: "Upload failed. Please try again." }));
-    } finally {
       setUploading(false);
     }
   };
@@ -326,7 +386,7 @@ function AudioPromptRenderer({
 
       {state.error && <div style={styles.errorBox}>{state.error}</div>}
 
-      {!state.isRecording && !blobRef.current && (
+      {!state.isRecording && !blobRef.current && !uploading && !uploaded && (
         <button style={styles.btnDanger} onClick={startRecording}>
           <span style={{ width: 12, height: 12, backgroundColor: "#fff", borderRadius: "50%", display: "inline-block" }} />
           Start Recording
@@ -344,19 +404,20 @@ function AudioPromptRenderer({
               {fmt(state.duration)} / {fmt(maxDuration)}
             </span>
           </div>
+          {/* Equalizer */}
+          <canvas
+            ref={canvasRef}
+            width={280}
+            height={40}
+            style={{ width: "100%", height: "40px", borderRadius: "8px", backgroundColor: "#fef2f2" }}
+          />
           <button style={styles.btnDark} onClick={stopRecording}>Stop Recording</button>
         </div>
       )}
 
-      {!state.isRecording && blobRef.current && !uploaded && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <div style={styles.successBox}>Recorded: {fmt(state.duration)}</div>
-          <button
-            style={{ ...styles.btn, ...(uploading ? styles.btnDisabled : {}) }}
-            onClick={handleUpload}
-          >
-            {uploading ? "Uploading..." : "Submit Recording"}
-          </button>
+      {uploading && (
+        <div style={{ ...styles.successBox, textAlign: "center" as const }}>
+          Submitting your response...
         </div>
       )}
     </div>

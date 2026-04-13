@@ -77,8 +77,8 @@ export default function TaskPage() {
             }}
           >
             <p className="leading-relaxed text-base" style={{ color: "#d1d5db" }}>
-              Imagine the weekend is coming and you want to find something to do
-              with your child on <strong style={{ color: "#fff" }}>Saturday morning</strong>.
+              You want to find something fun to do with your child
+              in the <strong style={{ color: "#fff" }}>next few days</strong>.
             </p>
             <p className="leading-relaxed text-base" style={{ color: "#d1d5db" }}>
               You will now see a website. Try to find a suitable activity.

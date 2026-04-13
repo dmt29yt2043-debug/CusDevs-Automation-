@@ -57,37 +57,17 @@ interface ResearchWidgetProps {
 export default function ResearchWidget({ scenarioJson, sessionId, onComplete }: ResearchWidgetProps) {
   const [scenario, setScenario] = useState<ScenarioDefinition | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [delayDone, setDelayDone] = useState(false);
+  const [delayDone, setDelayDone] = useState(true);
+  const [waiting, setWaiting] = useState(false);
 
   useEffect(() => {
     try {
       const parsed = parseScenario(scenarioJson);
       setScenario(parsed);
-
-      // Find first interactive step (skip message, button, wait_for_time)
-      const skipTypes = ["message", "button", "wait_for_time"];
-      let startIndex = 0;
-      for (let i = 0; i < parsed.steps.length; i++) {
-        if (!skipTypes.includes(parsed.steps[i].type)) {
-          startIndex = i;
-          break;
-        }
-      }
-      setCurrentIndex(startIndex);
-
-      // Find delay from wait_for_time step (or default 60s)
-      const waitStep = parsed.steps.find((s) => s.type === "wait_for_time");
-      const delaySec = (waitStep as { durationSec?: number })?.durationSec || 60;
-
-      // Show widget after delay
-      const timer = setTimeout(() => {
-        setDelayDone(true);
-        setIsOpen(true);
-      }, delaySec * 1000);
-
-      return () => clearTimeout(timer);
+      // Start from step 0 (message with task description) — shown immediately
+      setCurrentIndex(0);
     } catch (err) { console.error("Failed to parse scenario:", err); }
   }, [scenarioJson]);
 
@@ -110,6 +90,26 @@ export default function ResearchWidget({ scenarioJson, sessionId, onComplete }: 
       }
       const nextIndex = currentIndex + 1;
       if (nextIndex >= scenario.steps.length) { onComplete(); return; }
+
+      // If next step is wait_for_time → hide widget, wait, then skip to step after
+      const nextStep = scenario.steps[nextIndex];
+      if (nextStep.type === "wait_for_time") {
+        const delaySec = (nextStep as { durationSec?: number }).durationSec || 60;
+        setWaiting(true);
+        setIsOpen(false);
+        setDelayDone(false);
+        setTimeout(() => {
+          // Skip wait step, go to the one after it
+          const afterWaitIndex = nextIndex + 1;
+          if (afterWaitIndex >= scenario.steps.length) { onComplete(); return; }
+          setCurrentIndex(afterWaitIndex);
+          setWaiting(false);
+          setDelayDone(true);
+          setIsOpen(true);
+        }, delaySec * 1000);
+        return;
+      }
+
       setCurrentIndex(nextIndex);
     },
     [scenario, currentIndex, currentStep, sessionId, onComplete]
