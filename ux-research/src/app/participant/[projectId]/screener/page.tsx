@@ -232,12 +232,12 @@ export default function ScreenerPage() {
 
   const [answers, setAnswers] = useState({
     isParent: "",
-    city: "",
+    borough: "",
     searchMethod: [] as string[],
     frequency: "",
   });
 
-  const isValid = answers.isParent && answers.city;
+  const isValid = answers.isParent === "yes" && answers.borough;
   const [autoSubmit, setAutoSubmit] = useState(false);
 
   // Secret shortcut: Ctrl+Shift+K → auto-fill and skip
@@ -248,7 +248,7 @@ export default function ScreenerPage() {
         setChildren([{ age: "6", gender: "boy" }]);
         setAnswers({
           isParent: "yes",
-          city: "Manhattan",
+          borough: "manhattan",
           searchMethod: ["social", "friends"],
           frequency: "weekly",
         });
@@ -262,10 +262,10 @@ export default function ScreenerPage() {
   // Auto-submit when flag is set and form is valid
   const submitRef = useRef<(() => void) | null>(null);
   useEffect(() => {
-    if (autoSubmit && answers.isParent === "yes" && answers.city && submitRef.current) {
+    if (autoSubmit && answers.isParent === "yes" && answers.borough && submitRef.current) {
       submitRef.current();
     }
-  }, [autoSubmit, answers.isParent, answers.city]);
+  }, [autoSubmit, answers.isParent, answers.borough]);
 
   const handleSubmit = async () => {
     if ((!isValid && !autoSubmit) || submitting) return;
@@ -277,14 +277,19 @@ export default function ScreenerPage() {
         .map((c) => `${c.age}y${c.gender ? ` (${c.gender})` : ""}`)
         .join(", ");
 
+      const boroughLabels: Record<string, string> = {
+        manhattan: "Manhattan", brooklyn: "Brooklyn", queens: "Queens",
+        bronx: "Bronx", staten_island: "Staten Island", other: "Other",
+      };
+
       const submitData = {
         ...answers,
+        city: boroughLabels[answers.borough] || answers.borough,
         childAge: childrenData,
         searchMethod: answers.searchMethod.join(", "),
       };
 
       // Store screener data for test page URL personalization
-      // Maps to PulseUp V2 format: source=quiz, child_age, borough, interests, pain
       const firstChildAge = children.find((c) => c.age)?.age || "";
       let ageGroup = "6-8";
       const ageNum = parseInt(firstChildAge);
@@ -293,21 +298,10 @@ export default function ScreenerPage() {
       else if (ageNum >= 9 && ageNum <= 12) ageGroup = "9-12";
       else if (ageNum >= 13) ageGroup = "13+";
 
-      const cityLower = (answers.city || "").toLowerCase().trim();
-      const boroughMap: Record<string, string> = {
-        manhattan: "manhattan", brooklyn: "brooklyn", queens: "queens",
-        bronx: "bronx", "staten island": "staten_island",
-        "new york": "manhattan", nyc: "manhattan", ny: "manhattan",
-      };
-      const borough = boroughMap[cityLower] || "manhattan";
-
-      // Default broad interests for general discovery
-      const interests = ["outdoor", "museums", "playgrounds"];
-
       sessionStorage.setItem(`screener-params-${projectId}`, JSON.stringify({
         child_age: ageGroup,
-        borough,
-        interests,
+        borough: answers.borough,
+        interests: ["outdoor", "museums", "playgrounds"],
         pain: "hard_to_choose",
       }));
 
@@ -432,67 +426,73 @@ export default function ScreenerPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
-              Your children
-            </label>
-            <ChildrenInput children={children} onChange={setChildren} />
-          </div>
+          {answers.isParent === "yes" && (
+            <div>
+              <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
+                Your children
+              </label>
+              <ChildrenInput children={children} onChange={setChildren} />
+            </div>
+          )}
 
-          <div>
-            <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>City</label>
-            <input
-              type="text"
-              value={answers.city}
-              onChange={(e) => setAnswers((p) => ({ ...p, city: e.target.value }))}
-              placeholder="New York"
-              style={{
-                width: "100%",
-                background: "#1e1b4b",
-                border: "2px solid rgba(255,255,255,0.1)",
-                borderRadius: 12,
-                padding: "12px 16px",
-                fontSize: 14,
-                color: "#fff",
-                outline: "none",
-              }}
-            />
-          </div>
+          {answers.isParent === "yes" && (
+            <div>
+              <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
+                Where do you live?
+              </label>
+              <ChipGroup
+                options={[
+                  { value: "manhattan", label: "Manhattan" },
+                  { value: "brooklyn", label: "Brooklyn" },
+                  { value: "queens", label: "Queens" },
+                  { value: "bronx", label: "Bronx" },
+                  { value: "staten_island", label: "Staten Island" },
+                  { value: "other", label: "Other area" },
+                ]}
+                value={answers.borough}
+                onChange={(v) => setAnswers((p) => ({ ...p, borough: v }))}
+              />
+            </div>
+          )}
 
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: "#fff" }}>
-              How do you usually find activities for kids?
-            </label>
-            <p className="text-xs mb-2.5" style={{ color: "#6b7280" }}>Select all that apply</p>
-            <MultiChipGroup
-              options={[
-                { value: "search_engine", label: "Google / Search" },
-                { value: "social", label: "Social media" },
-                { value: "apps", label: "Apps & websites" },
-                { value: "friends", label: "Friends" },
-                { value: "chats", label: "Parent chats" },
-                { value: "other", label: "Other" },
-              ]}
-              values={answers.searchMethod}
-              onChange={(v) => setAnswers((p) => ({ ...p, searchMethod: v }))}
-            />
-          </div>
+          {answers.isParent === "yes" && (
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: "#fff" }}>
+                How do you usually find activities for kids?
+              </label>
+              <p className="text-xs mb-2.5" style={{ color: "#6b7280" }}>Select all that apply</p>
+              <MultiChipGroup
+                options={[
+                  { value: "search_engine", label: "Google / Search" },
+                  { value: "social", label: "Social media" },
+                  { value: "apps", label: "Apps & websites" },
+                  { value: "friends", label: "Friends" },
+                  { value: "chats", label: "Parent chats" },
+                  { value: "other", label: "Other" },
+                ]}
+                values={answers.searchMethod}
+                onChange={(v) => setAnswers((p) => ({ ...p, searchMethod: v }))}
+              />
+            </div>
+          )}
 
-          <div>
-            <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
-              How often do you go to events with kids?
-            </label>
-            <ChipGroup
-              options={[
-                { value: "weekly", label: "Every week" },
-                { value: "biweekly", label: "Every 2 weeks" },
-                { value: "monthly", label: "Once a month" },
-                { value: "rarely", label: "Less often" },
-              ]}
-              value={answers.frequency}
-              onChange={(v) => setAnswers((p) => ({ ...p, frequency: v }))}
-            />
-          </div>
+          {answers.isParent === "yes" && (
+            <div>
+              <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
+                How often do you go to events with kids?
+              </label>
+              <ChipGroup
+                options={[
+                  { value: "weekly", label: "Every week" },
+                  { value: "biweekly", label: "Every 2 weeks" },
+                  { value: "monthly", label: "Once a month" },
+                  { value: "rarely", label: "Less often" },
+                ]}
+                value={answers.frequency}
+                onChange={(v) => setAnswers((p) => ({ ...p, frequency: v }))}
+              />
+            </div>
+          )}
         </div>
 
         <button

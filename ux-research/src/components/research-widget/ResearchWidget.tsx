@@ -10,41 +10,42 @@ const w = {
     position: "fixed", bottom: "24px", right: "24px", zIndex: 9999,
   } as CSSProperties,
   launcherBtn: {
-    width: "56px", height: "56px", backgroundColor: "#2563eb", borderRadius: "50%",
+    width: "56px", height: "56px", backgroundColor: "#e91e63", borderRadius: "50%",
     border: "none", cursor: "pointer", display: "flex", alignItems: "center",
-    justifyContent: "center", boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
+    justifyContent: "center", boxShadow: "0 4px 24px rgba(233,30,99,0.3)",
     transition: "transform 0.15s, background-color 0.15s", position: "relative" as const,
   } as CSSProperties,
   notifDot: {
     position: "absolute" as const, top: "-2px", right: "-2px", width: "12px", height: "12px",
-    backgroundColor: "#ef4444", borderRadius: "50%", border: "2px solid #fff",
+    backgroundColor: "#22c55e", borderRadius: "50%", border: "2px solid #1e1b4b",
   } as CSSProperties,
   panel: {
     position: "fixed" as const, bottom: "24px", right: "24px", zIndex: 9999,
-    width: "320px", maxHeight: "500px", display: "flex", flexDirection: "column" as const,
-    backgroundColor: "#fff", borderRadius: "16px",
-    boxShadow: "0 8px 40px rgba(0,0,0,0.16)", border: "1px solid #e5e7eb",
+    width: "340px", maxHeight: "500px", display: "flex", flexDirection: "column" as const,
+    backgroundColor: "#1e1b4b", borderRadius: "16px",
+    boxShadow: "0 8px 40px rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)",
     overflow: "hidden", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    animation: "widgetSlideIn 0.4s ease-out",
   } as CSSProperties,
   header: {
     display: "flex", alignItems: "center", justifyContent: "space-between",
-    padding: "12px 16px", backgroundColor: "#f9fafb", borderBottom: "1px solid #f3f4f6",
+    padding: "12px 16px", backgroundColor: "rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.06)",
   } as CSSProperties,
   headerLeft: { display: "flex", alignItems: "center", gap: "8px" } as CSSProperties,
   headerDot: {
     width: "8px", height: "8px", backgroundColor: "#22c55e", borderRadius: "50%",
   } as CSSProperties,
-  headerTitle: { fontSize: "14px", fontWeight: 600, color: "#374151" } as CSSProperties,
+  headerTitle: { fontSize: "14px", fontWeight: 600, color: "#fff" } as CSSProperties,
   headerRight: { display: "flex", alignItems: "center", gap: "4px" } as CSSProperties,
-  headerCounter: { fontSize: "12px", color: "#9ca3af" } as CSSProperties,
+  headerCounter: { fontSize: "12px", color: "#6b7280" } as CSSProperties,
   minimizeBtn: {
     padding: "4px", border: "none", backgroundColor: "transparent", cursor: "pointer",
-    color: "#9ca3af", borderRadius: "4px", display: "flex",
+    color: "#6b7280", borderRadius: "4px", display: "flex",
   } as CSSProperties,
   content: { padding: "16px", overflowY: "auto" as const, flex: 1 } as CSSProperties,
-  progressBg: { height: "3px", backgroundColor: "#f3f4f6" } as CSSProperties,
+  progressBg: { height: "3px", backgroundColor: "rgba(255,255,255,0.06)" } as CSSProperties,
   progressFill: (pct: number) => ({
-    height: "3px", backgroundColor: "#2563eb", transition: "width 0.3s", width: `${pct}%`,
+    height: "3px", background: "linear-gradient(135deg, #e91e63, #ff6090)", transition: "width 0.3s", width: `${pct}%`,
   }) as CSSProperties,
 };
 
@@ -62,16 +63,36 @@ export default function ResearchWidget({ scenarioJson, sessionId, onComplete }: 
   const [delayDone, setDelayDone] = useState(true);
   const [waiting, setWaiting] = useState(false);
 
+  // Add CSS animation for widget slide-in
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes widgetSlideIn {
+        from { transform: translateY(20px) scale(0.95); opacity: 0; }
+        to { transform: translateY(0) scale(1); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => { document.head.removeChild(style); };
+  }, []);
+
   useEffect(() => {
     try {
       const parsed = parseScenario(scenarioJson);
       setScenario(parsed);
-      // Start from step 0 (message with task description) — shown immediately
       setCurrentIndex(0);
     } catch (err) { console.error("Failed to parse scenario:", err); }
   }, [scenarioJson]);
 
   const currentStep: ScenarioStep | null = scenario ? getStep(scenario, currentIndex) : null;
+
+  // Count only interactive steps for progress display
+  const interactiveTypes = ["audio_prompt", "rating"];
+  const interactiveSteps = scenario ? scenario.steps.filter((s) => interactiveTypes.includes(s.type)) : [];
+  const currentInteractiveIndex = currentStep
+    ? interactiveSteps.findIndex((s) => s.id === currentStep.id)
+    : 0;
+  const interactiveTotal = interactiveSteps.length || 1;
 
   const handleStepComplete = useCallback(
     async (response?: { responseType: string; value: unknown }) => {
@@ -106,6 +127,19 @@ export default function ResearchWidget({ scenarioJson, sessionId, onComplete }: 
           setWaiting(false);
           setDelayDone(true);
           setIsOpen(true);
+          // Play subtle notification sound
+          try {
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 800;
+            gain.gain.value = 0.1;
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.stop(ctx.currentTime + 0.3);
+          } catch { /* audio not available */ }
         }, delaySec * 1000);
         return;
       }
@@ -136,7 +170,8 @@ export default function ResearchWidget({ scenarioJson, sessionId, onComplete }: 
     );
   }
 
-  const progressPct = ((currentIndex + 1) / scenario.steps.length) * 100;
+  const displayStep = Math.max(currentInteractiveIndex + 1, 1);
+  const progressPct = (displayStep / interactiveTotal) * 100;
 
   return (
     <div data-rw-widget style={w.panel}>
@@ -146,7 +181,7 @@ export default function ResearchWidget({ scenarioJson, sessionId, onComplete }: 
           <span style={w.headerTitle}>Study</span>
         </div>
         <div style={w.headerRight}>
-          <span style={w.headerCounter}>{currentIndex + 1}/{scenario.steps.length}</span>
+          <span style={w.headerCounter}>{displayStep}/{interactiveTotal}</span>
           <button onClick={() => setIsMinimized(true)} style={w.minimizeBtn} title="Minimize">
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />

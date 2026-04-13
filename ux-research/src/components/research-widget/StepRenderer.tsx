@@ -8,12 +8,12 @@ import { trackEvent } from "@/lib/event-tracking";
 // Shared styles
 const styles = {
   container: { display: "flex", flexDirection: "column", gap: "12px" } as CSSProperties,
-  text: { fontSize: "14px", lineHeight: "1.6", color: "#374151", margin: 0 } as CSSProperties,
-  textSmall: { fontSize: "12px", color: "#9ca3af", margin: 0 } as CSSProperties,
+  text: { fontSize: "14px", lineHeight: "1.6", color: "#d1d5db", margin: 0 } as CSSProperties,
+  textSmall: { fontSize: "12px", color: "#6b7280", margin: 0 } as CSSProperties,
   btn: {
     width: "100%",
     padding: "10px 16px",
-    backgroundColor: "#2563eb",
+    background: "linear-gradient(135deg, #e91e63, #ff6090)",
     color: "#fff",
     border: "none",
     borderRadius: "10px",
@@ -26,9 +26,9 @@ const styles = {
   btnSecondary: {
     width: "100%",
     padding: "10px 16px",
-    backgroundColor: "#f3f4f6",
-    color: "#374151",
-    border: "1px solid #e5e7eb",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    color: "#d1d5db",
+    border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: "10px",
     fontSize: "14px",
     fontWeight: 500,
@@ -84,9 +84,9 @@ const styles = {
     borderRadius: "8px",
     fontSize: "12px",
     fontWeight: 600,
-    border: selected ? "2px solid #2563eb" : "1px solid #e5e7eb",
-    backgroundColor: selected ? "#2563eb" : "#fff",
-    color: selected ? "#fff" : "#374151",
+    border: selected ? "2px solid #e91e63" : "1px solid rgba(255,255,255,0.1)",
+    backgroundColor: selected ? "#e91e63" : "rgba(255,255,255,0.05)",
+    color: selected ? "#fff" : "#9ca3af",
     cursor: "pointer",
     transition: "all 0.15s",
     fontFamily: "inherit",
@@ -99,7 +99,7 @@ const styles = {
   } as CSSProperties,
   textarea: {
     width: "100%",
-    border: "1px solid #e5e7eb",
+    border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: "10px",
     padding: "10px 12px",
     fontSize: "14px",
@@ -107,6 +107,8 @@ const styles = {
     fontFamily: "inherit",
     outline: "none",
     boxSizing: "border-box" as const,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    color: "#fff",
   } as CSSProperties,
   errorBox: {
     backgroundColor: "#fef2f2",
@@ -139,13 +141,13 @@ const styles = {
   } as CSSProperties,
   progressBg: {
     height: "6px",
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderRadius: "999px",
     overflow: "hidden",
   } as CSSProperties,
   progressFill: (pct: number) => ({
     height: "6px",
-    backgroundColor: "#2563eb",
+    background: "linear-gradient(135deg, #e91e63, #ff6090)",
     borderRadius: "999px",
     transition: "width 0.3s",
     width: `${pct}%`,
@@ -184,10 +186,11 @@ export default function StepRenderer({ step, sessionId, onComplete }: StepRender
 }
 
 function MessageRenderer({ step, onComplete }: { step: ScenarioStep; onComplete: () => void }) {
+  const label = (step as { actionLabel?: string }).actionLabel || "Next";
   return (
     <div style={styles.container}>
       <p style={styles.text}>{step.text}</p>
-      <button style={styles.btn} onClick={onComplete}>Next</button>
+      <button style={styles.btn} onClick={onComplete}>{label}</button>
     </div>
   );
 }
