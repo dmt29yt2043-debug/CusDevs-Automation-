@@ -230,14 +230,16 @@ export default function ScreenerPage() {
 
   const [children, setChildren] = useState<Child[]>([{ age: "", gender: "" }]);
 
+  const [otherArea, setOtherArea] = useState("");
+
   const [answers, setAnswers] = useState({
-    isParent: "",
+    isParent: "yes",
     borough: "",
     searchMethod: [] as string[],
     frequency: "",
   });
 
-  const isValid = answers.isParent === "yes" && answers.borough;
+  const isValid = answers.borough !== "" && (answers.borough !== "other" || otherArea.trim() !== "");
   const [autoSubmit, setAutoSubmit] = useState(false);
 
   // Secret shortcut: Ctrl+Shift+K → auto-fill and skip
@@ -292,7 +294,7 @@ export default function ScreenerPage() {
 
       const submitData = {
         ...answers,
-        city: boroughLabels[answers.borough] || answers.borough,
+        city: answers.borough === "other" ? otherArea.trim() || "Other" : boroughLabels[answers.borough] || answers.borough,
         childAge: childrenData,
         searchMethod: answers.searchMethod.join(", "),
       };
@@ -368,45 +370,6 @@ export default function ScreenerPage() {
 
   handleSubmitRef.current = handleSubmit;
 
-  // Not a parent — show disqualification screen
-  if (answers.isParent === "no") {
-    return (
-      <ParticipantLayout step={2} totalSteps={5}>
-        <div className="text-center space-y-6 py-8">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
-            style={{ background: "rgba(233,30,99,0.15)" }}
-          >
-            <span className="text-2xl">🙏</span>
-          </div>
-          <h1 className="text-xl font-bold" style={{ color: "#fff" }}>
-            Thank you for your interest!
-          </h1>
-          <p className="text-sm leading-relaxed" style={{ color: "#9ca3af" }}>
-            This study is specifically designed for parents with children.
-            We appreciate you taking the time — hope to see you in future research!
-          </p>
-          <button
-            onClick={() => setAnswers((p) => ({ ...p, isParent: "" }))}
-            className="transition-all hover:opacity-80"
-            style={{
-              padding: "10px 20px",
-              borderRadius: 12,
-              fontSize: 13,
-              fontWeight: 500,
-              border: "1px solid rgba(255,255,255,0.1)",
-              background: "transparent",
-              color: "#6b7280",
-              cursor: "pointer",
-            }}
-          >
-            ← I am a parent, go back
-          </button>
-        </div>
-      </ParticipantLayout>
-    );
-  }
-
   return (
     <ParticipantLayout step={2} totalSteps={5}>
       <div className="space-y-7">
@@ -422,85 +385,82 @@ export default function ScreenerPage() {
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
-              Are you a parent?
+              Your children
+            </label>
+            <ChildrenInput children={children} onChange={setChildren} />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
+              Where do you live?
             </label>
             <ChipGroup
               options={[
-                { value: "yes", label: "Yes" },
-                { value: "no", label: "No" },
+                { value: "manhattan", label: "Manhattan" },
+                { value: "brooklyn", label: "Brooklyn" },
+                { value: "queens", label: "Queens" },
+                { value: "bronx", label: "Bronx" },
+                { value: "staten_island", label: "Staten Island" },
+                { value: "other", label: "Other area" },
               ]}
-              value={answers.isParent}
-              onChange={(v) => setAnswers((p) => ({ ...p, isParent: v }))}
+              value={answers.borough}
+              onChange={(v) => setAnswers((p) => ({ ...p, borough: v }))}
+            />
+            {answers.borough === "other" && (
+              <input
+                type="text"
+                value={otherArea}
+                onChange={(e) => setOtherArea(e.target.value)}
+                placeholder="Enter your area"
+                style={{
+                  marginTop: 10,
+                  width: "100%",
+                  background: "#1e1b4b",
+                  border: "2px solid rgba(255,255,255,0.1)",
+                  borderRadius: 12,
+                  padding: "12px 16px",
+                  fontSize: 14,
+                  color: "#fff",
+                  outline: "none",
+                }}
+              />
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: "#fff" }}>
+              How do you usually find activities for kids?
+            </label>
+            <p className="text-xs mb-2.5" style={{ color: "#6b7280" }}>Select all that apply</p>
+            <MultiChipGroup
+              options={[
+                { value: "search_engine", label: "Google / Search" },
+                { value: "social", label: "Social media" },
+                { value: "apps", label: "Apps & websites" },
+                { value: "friends", label: "Friends" },
+                { value: "chats", label: "Parent chats" },
+                { value: "other", label: "Other" },
+              ]}
+              values={answers.searchMethod}
+              onChange={(v) => setAnswers((p) => ({ ...p, searchMethod: v }))}
             />
           </div>
 
-          {answers.isParent === "yes" && (
-            <div>
-              <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
-                Your children
-              </label>
-              <ChildrenInput children={children} onChange={setChildren} />
-            </div>
-          )}
-
-          {answers.isParent === "yes" && (
-            <div>
-              <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
-                Where do you live?
-              </label>
-              <ChipGroup
-                options={[
-                  { value: "manhattan", label: "Manhattan" },
-                  { value: "brooklyn", label: "Brooklyn" },
-                  { value: "queens", label: "Queens" },
-                  { value: "bronx", label: "Bronx" },
-                  { value: "staten_island", label: "Staten Island" },
-                  { value: "other", label: "Other area" },
-                ]}
-                value={answers.borough}
-                onChange={(v) => setAnswers((p) => ({ ...p, borough: v }))}
-              />
-            </div>
-          )}
-
-          {answers.isParent === "yes" && (
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: "#fff" }}>
-                How do you usually find activities for kids?
-              </label>
-              <p className="text-xs mb-2.5" style={{ color: "#6b7280" }}>Select all that apply</p>
-              <MultiChipGroup
-                options={[
-                  { value: "search_engine", label: "Google / Search" },
-                  { value: "social", label: "Social media" },
-                  { value: "apps", label: "Apps & websites" },
-                  { value: "friends", label: "Friends" },
-                  { value: "chats", label: "Parent chats" },
-                  { value: "other", label: "Other" },
-                ]}
-                values={answers.searchMethod}
-                onChange={(v) => setAnswers((p) => ({ ...p, searchMethod: v }))}
-              />
-            </div>
-          )}
-
-          {answers.isParent === "yes" && (
-            <div>
-              <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
-                How often do you go to events with kids?
-              </label>
-              <ChipGroup
-                options={[
-                  { value: "weekly", label: "Every week" },
-                  { value: "biweekly", label: "Every 2 weeks" },
-                  { value: "monthly", label: "Once a month" },
-                  { value: "rarely", label: "Less often" },
-                ]}
-                value={answers.frequency}
-                onChange={(v) => setAnswers((p) => ({ ...p, frequency: v }))}
-              />
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium mb-2.5" style={{ color: "#fff" }}>
+              How often do you go to events with kids?
+            </label>
+            <ChipGroup
+              options={[
+                { value: "weekly", label: "Every week" },
+                { value: "biweekly", label: "Every 2 weeks" },
+                { value: "monthly", label: "Once a month" },
+                { value: "rarely", label: "Less often" },
+              ]}
+              value={answers.frequency}
+              onChange={(v) => setAnswers((p) => ({ ...p, frequency: v }))}
+            />
+          </div>
         </div>
 
         <button

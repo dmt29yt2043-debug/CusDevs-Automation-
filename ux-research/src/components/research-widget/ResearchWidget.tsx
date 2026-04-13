@@ -22,8 +22,8 @@ const w = {
   panel: {
     position: "fixed" as const, bottom: "24px", right: "24px", zIndex: 9999,
     width: "340px", maxHeight: "500px", display: "flex", flexDirection: "column" as const,
-    backgroundColor: "#1e1b4b", borderRadius: "16px",
-    boxShadow: "0 8px 40px rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)",
+    background: "linear-gradient(145deg, #2d2a5e, #1a1745)", borderRadius: "16px",
+    boxShadow: "0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(233,30,99,0.15)", border: "1px solid rgba(233,30,99,0.25)",
     overflow: "hidden", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     animation: "widgetSlideIn 0.4s ease-out",
   } as CSSProperties,

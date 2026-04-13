@@ -291,6 +291,7 @@ function AudioPromptRenderer({
   const blobRef = useRef<Blob | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const eqStreamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number>(0);
 
   const maxDuration = step.maxDurationSec || 90;
@@ -342,9 +343,10 @@ function AudioPromptRenderer({
 
     // Set up analyser for equalizer
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const eqStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      eqStreamRef.current = eqStream;
       const audioCtx = new AudioContext();
-      const source = audioCtx.createMediaStreamSource(stream);
+      const source = audioCtx.createMediaStreamSource(eqStream);
       const analyser = audioCtx.createAnalyser();
       analyser.fftSize = 64;
       source.connect(analyser);
@@ -363,6 +365,8 @@ function AudioPromptRenderer({
     blobRef.current = blob;
     cancelAnimationFrame(animFrameRef.current);
     analyserRef.current = null;
+    eqStreamRef.current?.getTracks().forEach((t) => t.stop());
+    eqStreamRef.current = null;
     trackEvent({ eventType: "audio_record_stopped", payloadJson: { stepId: step.id } });
 
     // Auto-upload after stopping
@@ -401,7 +405,7 @@ function AudioPromptRenderer({
       {!state.isRecording && !blobRef.current && !uploading && !uploaded && (
         <button style={styles.btnDanger} onClick={startRecording}>
           <span style={{ width: 12, height: 12, backgroundColor: "#fff", borderRadius: "50%", display: "inline-block" }} />
-          Start Recording
+          Start Audio Recording
         </button>
       )}
 
