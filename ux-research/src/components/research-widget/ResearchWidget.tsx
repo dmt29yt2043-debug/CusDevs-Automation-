@@ -57,12 +57,38 @@ interface ResearchWidgetProps {
 export default function ResearchWidget({ scenarioJson, sessionId, onComplete }: ResearchWidgetProps) {
   const [scenario, setScenario] = useState<ScenarioDefinition | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [delayDone, setDelayDone] = useState(false);
 
   useEffect(() => {
-    try { setScenario(parseScenario(scenarioJson)); }
-    catch (err) { console.error("Failed to parse scenario:", err); }
+    try {
+      const parsed = parseScenario(scenarioJson);
+      setScenario(parsed);
+
+      // Find first interactive step (skip message, button, wait_for_time)
+      const skipTypes = ["message", "button", "wait_for_time"];
+      let startIndex = 0;
+      for (let i = 0; i < parsed.steps.length; i++) {
+        if (!skipTypes.includes(parsed.steps[i].type)) {
+          startIndex = i;
+          break;
+        }
+      }
+      setCurrentIndex(startIndex);
+
+      // Find delay from wait_for_time step (or default 60s)
+      const waitStep = parsed.steps.find((s) => s.type === "wait_for_time");
+      const delaySec = (waitStep as { durationSec?: number })?.durationSec || 60;
+
+      // Show widget after delay
+      const timer = setTimeout(() => {
+        setDelayDone(true);
+        setIsOpen(true);
+      }, delaySec * 1000);
+
+      return () => clearTimeout(timer);
+    } catch (err) { console.error("Failed to parse scenario:", err); }
   }, [scenarioJson]);
 
   const currentStep: ScenarioStep | null = scenario ? getStep(scenario, currentIndex) : null;
@@ -89,7 +115,7 @@ export default function ResearchWidget({ scenarioJson, sessionId, onComplete }: 
     [scenario, currentIndex, currentStep, sessionId, onComplete]
   );
 
-  if (!scenario || !currentStep) return null;
+  if (!scenario || !currentStep || !delayDone) return null;
 
   if (!isOpen || isMinimized) {
     return (
