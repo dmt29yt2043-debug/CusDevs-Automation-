@@ -332,22 +332,13 @@ export default async function SessionDetailPage({
           <h1 className="text-2xl font-bold">Session Details</h1>
           <p className="text-gray-500 mt-1">{session.project.name}</p>
         </div>
-        <div className="flex flex-col items-end gap-3">
-          <span
-            className={`text-sm px-3 py-1.5 rounded-full font-medium ${
-              statusColors[session.status] || "bg-gray-100"
-            }`}
-          >
-            {session.status}
-          </span>
-          {totalAudio > 0 && (
-            <TranscribeButton
-              sessionId={session.id}
-              audioCount={totalAudio}
-              pendingCount={pendingAudio}
-            />
-          )}
-        </div>
+        <span
+          className={`text-sm px-3 py-1.5 rounded-full font-medium ${
+            statusColors[session.status] || "bg-gray-100"
+          }`}
+        >
+          {session.status}
+        </span>
       </div>
 
       {/* Meta cards */}
@@ -479,6 +470,14 @@ export default async function SessionDetailPage({
                     {/* Inline audio player */}
                     {item.audioUrl && (
                       <div className="mt-2 space-y-2">
+                        {/* Transcribe button — shown above audio until transcribed */}
+                        {(!item.audioTranscript || !item.audioSummary) && (
+                          <TranscribeButton
+                            sessionId={session.id}
+                            audioCount={totalAudio}
+                            pendingCount={pendingAudio}
+                          />
+                        )}
                         <div className="flex items-center gap-3 bg-purple-50 rounded-lg p-3">
                           <audio controls className="h-8 flex-1" src={item.audioUrl} />
                           {item.audioDuration && (
