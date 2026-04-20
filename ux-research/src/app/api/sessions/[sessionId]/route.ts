@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { unlink, rm } from "fs/promises";
-import path from "path";
+import { purgeSession } from "@/lib/session-trash";
 
 export async function GET(
   _req: Request,
@@ -63,46 +62,36 @@ export async function PATCH(
   return NextResponse.json(updated);
 }
 
+/**
+ * DELETE = soft-delete (move to trash). Supports ?purge=1 for hard delete
+ * (used from the trash UI when user clicks "Delete permanently").
+ */
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
   const { sessionId } = await params;
+  const { searchParams } = new URL(req.url);
+  const purge = searchParams.get("purge") === "1";
 
   const session = await prisma.session.findUnique({
     where: { id: sessionId },
-    include: { audioAssets: { select: { filePath: true } } },
+    select: { id: true },
   });
   if (!session) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  // Delete DB rows (children first — no cascade defined in schema)
-  await prisma.$transaction([
-    prisma.event.deleteMany({ where: { sessionId } }),
-    prisma.response.deleteMany({ where: { sessionId } }),
-    prisma.audioAsset.deleteMany({ where: { sessionId } }),
-    prisma.session.delete({ where: { id: sessionId } }),
-  ]);
-
-  // Best-effort remove audio files
-  for (const asset of session.audioAssets) {
-    try {
-      await unlink(asset.filePath);
-    } catch {
-      /* file already gone */
-    }
-  }
-  // Remove the per-session audio folder (ignore errors)
-  const uploadDir = process.env.UPLOAD_DIR || "./uploads";
-  try {
-    await rm(path.join(uploadDir, "audio", sessionId), {
-      recursive: true,
-      force: true,
-    });
-  } catch {
-    /* dir missing */
+  if (purge) {
+    await purgeSession(sessionId);
+    return NextResponse.json({ ok: true, id: sessionId, purged: true });
   }
 
-  return NextResponse.json({ ok: true, id: sessionId });
+  // soft delete
+  const updated = await prisma.session.update({
+    where: { id: sessionId },
+    data: { deletedAt: new Date() },
+    select: { id: true, deletedAt: true },
+  });
+  return NextResponse.json({ ok: true, id: updated.id, deletedAt: updated.deletedAt });
 }

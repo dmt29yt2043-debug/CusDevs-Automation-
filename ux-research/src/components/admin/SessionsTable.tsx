@@ -92,13 +92,6 @@ export default function SessionsTable({
   const deleteSelected = async () => {
     const count = selected.size;
     if (count === 0) return;
-    if (
-      !confirm(
-        `Delete ${count} session${count === 1 ? "" : "s"}? This will also remove all events, responses, and audio recordings. This cannot be undone.`
-      )
-    ) {
-      return;
-    }
     setDeleting(true);
     try {
       const ids = Array.from(selected);
@@ -111,7 +104,7 @@ export default function SessionsTable({
       );
       const failed = results.filter((r) => r.status === "rejected").length;
       if (failed > 0) {
-        alert(`${failed} session${failed === 1 ? "" : "s"} failed to delete.`);
+        alert(`${failed} session${failed === 1 ? "" : "s"} failed to move to trash.`);
       }
       setSelected(new Set());
       startTransition(() => {
@@ -136,8 +129,9 @@ export default function SessionsTable({
             onClick={deleteSelected}
             disabled={deleting || isPending}
             className="px-3 py-1.5 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title="Move to trash (reversible for 14 days)"
           >
-            {deleting ? "Deleting…" : `Delete ${selected.size}`}
+            {deleting ? "Moving…" : `Move ${selected.size} to trash`}
           </button>
         )}
       </div>
@@ -220,7 +214,14 @@ export default function SessionsTable({
                     </Link>
                   </td>
                   {showProjectColumn && (
-                    <td className="px-4 py-3 text-sm">{s.projectName}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <Link
+                        href={`/admin/sessions/${s.id}`}
+                        className="text-gray-700 hover:text-blue-600 hover:underline"
+                      >
+                        {s.projectName}
+                      </Link>
+                    </td>
                   )}
                   <td className="px-4 py-3">
                     <span

@@ -20,7 +20,10 @@ export default async function SessionsPage({
   });
 
   const sessions = await prisma.session.findMany({
-    where: projectFilter ? { projectId: projectFilter } : undefined,
+    where: {
+      deletedAt: null,
+      ...(projectFilter ? { projectId: projectFilter } : {}),
+    },
     include: {
       project: { select: { name: true, shortCode: true, slug: true } },
       participant: { select: { screenerAnswersJson: true } },
@@ -28,6 +31,10 @@ export default async function SessionsPage({
     },
     orderBy: { createdAt: "desc" },
     take: 100,
+  });
+
+  const trashCount = await prisma.session.count({
+    where: { deletedAt: { not: null } },
   });
 
   const activeProject = projects.find((p) => p.id === projectFilter);
@@ -64,6 +71,16 @@ export default async function SessionsPage({
             </span>
           )}
         </h1>
+        <Link
+          href="/admin/sessions/trash"
+          className="text-sm px-3.5 py-1.5 rounded-lg font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors flex items-center gap-2"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          </svg>
+          Trash {trashCount > 0 && <span className="bg-gray-300 text-gray-700 text-xs px-1.5 rounded-full">{trashCount}</span>}
+        </Link>
       </div>
 
       {/* Project filter tabs */}

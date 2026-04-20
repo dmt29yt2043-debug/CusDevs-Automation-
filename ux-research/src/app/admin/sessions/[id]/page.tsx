@@ -292,7 +292,7 @@ export default async function SessionDetailPage({
     },
   });
 
-  if (!session) notFound();
+  if (!session || session.deletedAt) notFound();
 
   const screener = session.participant?.screenerAnswersJson as Record<string, string> | null;
   const timeline = buildTimeline(session.events, session.responses, session.audioAssets);

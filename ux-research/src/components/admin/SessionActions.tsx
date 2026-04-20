@@ -32,13 +32,6 @@ export default function SessionActions({
   };
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        "Delete this session? This will also remove all events, responses, and audio recordings. This cannot be undone."
-      )
-    ) {
-      return;
-    }
     setDeleting(true);
     try {
       const res = await fetch(`/api/sessions/${sessionId}`, {
@@ -79,8 +72,8 @@ export default function SessionActions({
       <button
         onClick={handleDelete}
         disabled={deleting}
-        title="Delete session"
-        aria-label="Delete session"
+        title="Move to trash (recoverable for 14 days)"
+        aria-label="Move session to trash"
         className="p-2 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
       >
         <svg
