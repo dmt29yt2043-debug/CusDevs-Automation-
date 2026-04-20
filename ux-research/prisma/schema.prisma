@@ -124,6 +124,7 @@ model AudioAsset {
   mimeType    String?
   durationSec Float?
   transcript  String?
+  summary     String?
   createdAt   DateTime @default(now())
   session     Session  @relation(fields: [sessionId], references: [id])
 

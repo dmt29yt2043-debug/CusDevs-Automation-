@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getAudioUrl } from "@/lib/storage";
 import Link from "next/link";
 import ClickMap from "@/components/admin/ClickMap";
+import TranscribeButton from "@/components/admin/TranscribeButton";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,8 @@ interface TimelineItem {
   textValue?: string;
   audioUrl?: string;
   audioDuration?: number;
+  audioTranscript?: string;
+  audioSummary?: string;
   coords?: { x: number; y: number };
   rawPayload?: Record<string, unknown>;
 }
@@ -61,6 +64,8 @@ function buildTimeline(
     stepId: string;
     filePath: string;
     durationSec: number | null;
+    transcript: string | null;
+    summary: string | null;
     createdAt: Date;
   }>
 ): TimelineItem[] {
@@ -109,6 +114,8 @@ function buildTimeline(
             if (audio) {
               item.audioUrl = getAudioUrl(audio.filePath);
               item.audioDuration = audio.durationSec ?? undefined;
+              item.audioTranscript = audio.transcript ?? undefined;
+              item.audioSummary = audio.summary ?? undefined;
             }
           }
 
@@ -222,6 +229,8 @@ function buildTimeline(
         if (audio) {
           item.audioUrl = getAudioUrl(audio.filePath);
           item.audioDuration = audio.durationSec ?? undefined;
+          item.audioTranscript = audio.transcript ?? undefined;
+          item.audioSummary = audio.summary ?? undefined;
         }
       }
       items.push(item);
@@ -287,6 +296,11 @@ export default async function SessionDetailPage({
   const screener = session.participant?.screenerAnswersJson as Record<string, string> | null;
   const timeline = buildTimeline(session.events, session.responses, session.audioAssets);
 
+  const totalAudio = session.audioAssets.length;
+  const pendingAudio = session.audioAssets.filter(
+    (a) => !a.transcript || !a.summary
+  ).length;
+
   // Prepare click data for ClickMap component
   const clickEvents = session.events
     .filter((e) => e.eventType === "click")
@@ -310,7 +324,7 @@ export default async function SessionDetailPage({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <Link href="/admin/sessions" className="text-sm text-gray-400 hover:text-gray-600 mb-2 block">
             ← All Sessions
@@ -318,13 +332,22 @@ export default async function SessionDetailPage({
           <h1 className="text-2xl font-bold">Session Details</h1>
           <p className="text-gray-500 mt-1">{session.project.name}</p>
         </div>
-        <span
-          className={`text-sm px-3 py-1.5 rounded-full font-medium ${
-            statusColors[session.status] || "bg-gray-100"
-          }`}
-        >
-          {session.status}
-        </span>
+        <div className="flex flex-col items-end gap-3">
+          <span
+            className={`text-sm px-3 py-1.5 rounded-full font-medium ${
+              statusColors[session.status] || "bg-gray-100"
+            }`}
+          >
+            {session.status}
+          </span>
+          {totalAudio > 0 && (
+            <TranscribeButton
+              sessionId={session.id}
+              audioCount={totalAudio}
+              pendingCount={pendingAudio}
+            />
+          )}
+        </div>
       </div>
 
       {/* Meta cards */}
@@ -455,12 +478,34 @@ export default async function SessionDetailPage({
 
                     {/* Inline audio player */}
                     {item.audioUrl && (
-                      <div className="mt-2 flex items-center gap-3 bg-purple-50 rounded-lg p-3">
-                        <audio controls className="h-8 flex-1" src={item.audioUrl} />
-                        {item.audioDuration && (
-                          <span className="text-xs text-purple-600 whitespace-nowrap">
-                            {Math.round(item.audioDuration)}s
-                          </span>
+                      <div className="mt-2 space-y-2">
+                        <div className="flex items-center gap-3 bg-purple-50 rounded-lg p-3">
+                          <audio controls className="h-8 flex-1" src={item.audioUrl} />
+                          {item.audioDuration && (
+                            <span className="text-xs text-purple-600 whitespace-nowrap">
+                              {Math.round(item.audioDuration)}s
+                            </span>
+                          )}
+                        </div>
+                        {item.audioSummary && (
+                          <div className="rounded-lg p-3 border border-amber-200 bg-amber-50">
+                            <div className="text-[10px] uppercase tracking-wide text-amber-700 font-semibold mb-1">
+                              Summary
+                            </div>
+                            <div className="text-sm text-amber-900 leading-relaxed">
+                              {item.audioSummary}
+                            </div>
+                          </div>
+                        )}
+                        {item.audioTranscript && (
+                          <details className="rounded-lg border border-gray-200 bg-gray-50">
+                            <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-gray-600 hover:text-gray-800 select-none">
+                              Transcript
+                            </summary>
+                            <div className="px-3 pb-3 text-sm text-gray-700 italic whitespace-pre-wrap">
+                              &ldquo;{item.audioTranscript}&rdquo;
+                            </div>
+                          </details>
                         )}
                       </div>
                     )}
