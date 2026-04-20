@@ -11,6 +11,7 @@ model Project {
   id          String        @id @default(uuid())
   name        String
   slug        String        @unique
+  shortCode   String?       @unique
   description String?
   testSiteUrl String?
   createdAt   DateTime      @default(now())
@@ -62,6 +63,7 @@ model Session {
   projectId     String
   scenarioId    String
   participantId String?
+  seqNumber     Int?
   status        SessionStatus @default(started)
   startedAt     DateTime      @default(now())
   endedAt       DateTime?
@@ -77,6 +79,7 @@ model Session {
   responses     Response[]
   audioAssets   AudioAsset[]
 
+  @@unique([projectId, seqNumber])
   @@index([projectId])
   @@index([scenarioId])
   @@index([participantId])

@@ -13,6 +13,7 @@ const statusColors: Record<string, string> = {
 
 export interface SessionRow {
   id: string;
+  code: string;
   status: string;
   startedAt: string;
   durationSec: number | null;
@@ -171,8 +172,7 @@ export default function SessionsTable({
             </tr>
           </thead>
           <tbody>
-            {sessions.map((s, i) => {
-              const num = sessions.length - i;
+            {sessions.map((s) => {
               const isSelected = selected.has(s.id);
               const isFav = favorites.has(s.id);
               return (
@@ -214,9 +214,9 @@ export default function SessionsTable({
                   <td className="px-4 py-3">
                     <Link
                       href={`/admin/sessions/${s.id}`}
-                      className="text-sm text-blue-600 hover:underline font-medium"
+                      className="text-sm text-blue-600 hover:underline font-medium font-mono"
                     >
-                      #{num}
+                      {s.code}
                     </Link>
                   </td>
                   {showProjectColumn && (

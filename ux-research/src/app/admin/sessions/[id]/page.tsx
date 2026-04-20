@@ -302,6 +302,11 @@ export default async function SessionDetailPage({
     (a) => !a.transcript || !a.summary
   ).length;
 
+  const sessionCode =
+    session.seqNumber != null
+      ? `${session.project.shortCode || session.project.slug.slice(0, 3).toUpperCase()}-${session.seqNumber}`
+      : null;
+
   // Prepare click data for ClickMap component
   const clickEvents = session.events
     .filter((e) => e.eventType === "click")
@@ -330,7 +335,14 @@ export default async function SessionDetailPage({
           <Link href="/admin/sessions" className="text-sm text-gray-400 hover:text-gray-600 mb-2 block">
             ← All Sessions
           </Link>
-          <h1 className="text-2xl font-bold">Session Details</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-3">
+            Session Details
+            {sessionCode && (
+              <span className="font-mono text-base font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                {sessionCode}
+              </span>
+            )}
+          </h1>
           <p className="text-gray-500 mt-1">{session.project.name}</p>
         </div>
         <div className="flex flex-col items-end gap-3">

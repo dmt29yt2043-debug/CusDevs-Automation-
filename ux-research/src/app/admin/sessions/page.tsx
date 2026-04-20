@@ -22,7 +22,7 @@ export default async function SessionsPage({
   const sessions = await prisma.session.findMany({
     where: projectFilter ? { projectId: projectFilter } : undefined,
     include: {
-      project: { select: { name: true } },
+      project: { select: { name: true, shortCode: true, slug: true } },
       participant: { select: { screenerAnswersJson: true } },
       _count: { select: { events: true, responses: true, audioAssets: true } },
     },
@@ -36,8 +36,11 @@ export default async function SessionsPage({
     const screener = s.participant?.screenerAnswersJson as
       | Record<string, string>
       | null;
+    const code =
+      s.project.shortCode || s.project.slug.slice(0, 3).toUpperCase();
     return {
       id: s.id,
+      code: s.seqNumber != null ? `${code}-${s.seqNumber}` : "—",
       status: s.status,
       startedAt: s.startedAt.toISOString(),
       durationSec: s.durationSec,

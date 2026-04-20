@@ -5,15 +5,39 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { projectId, scenarioId, participantId, metadata } = body;
 
-  const session = await prisma.session.create({
-    data: {
-      projectId,
-      scenarioId,
-      participantId: participantId || null,
-      status: "started",
-      metadataJson: metadata || null,
-    },
-  });
+  // Atomically assign next seqNumber per project. @@unique([projectId, seqNumber])
+  // protects against races; on conflict we retry with a fresh MAX + 1.
+  let session: Awaited<ReturnType<typeof prisma.session.create>> | null = null;
+  for (let attempt = 0; attempt < 5 && !session; attempt++) {
+    const maxRow = await prisma.session.findFirst({
+      where: { projectId },
+      orderBy: { seqNumber: "desc" },
+      select: { seqNumber: true },
+    });
+    const nextSeq = (maxRow?.seqNumber ?? 0) + 1;
+    try {
+      session = await prisma.session.create({
+        data: {
+          projectId,
+          scenarioId,
+          participantId: participantId || null,
+          seqNumber: nextSeq,
+          status: "started",
+          metadataJson: metadata || null,
+        },
+      });
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code !== "P2002") throw err; // retry only on unique conflict
+    }
+  }
+
+  if (!session) {
+    return NextResponse.json(
+      { error: "Failed to assign session number" },
+      { status: 500 }
+    );
+  }
 
   await prisma.event.create({
     data: {
