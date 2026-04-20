@@ -129,9 +129,9 @@ export default function SessionsTable({
             onClick={deleteSelected}
             disabled={deleting || isPending}
             className="px-3 py-1.5 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Move to trash (reversible for 14 days)"
+            title="Move to bin (reversible for 14 days)"
           >
-            {deleting ? "Moving…" : `Move ${selected.size} to trash`}
+            {deleting ? "Moving…" : `Move ${selected.size} to bin`}
           </button>
         )}
       </div>

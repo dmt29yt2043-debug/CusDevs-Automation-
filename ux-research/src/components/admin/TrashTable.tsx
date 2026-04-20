@@ -125,7 +125,7 @@ export default function TrashTable({ rows, retentionDays }: TrashTableProps) {
       </table>
       {rows.length === 0 && (
         <p className="text-gray-400 text-center py-12 text-sm">
-          Trash is empty. Deleted sessions auto-purge after {retentionDays} days.
+          Bin is empty. Deleted sessions auto-purge after {retentionDays} days.
         </p>
       )}
     </div>

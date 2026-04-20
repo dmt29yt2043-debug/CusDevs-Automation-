@@ -47,7 +47,7 @@ export default async function TrashPage() {
           >
             ← All Sessions
           </Link>
-          <h1 className="text-2xl font-bold">Trash</h1>
+          <h1 className="text-2xl font-bold">Bin</h1>
           <p className="text-gray-500 mt-1 text-sm">
             Deleted sessions are auto-purged after {TRASH_RETENTION_DAYS} days.
             Restore to get them back before then.

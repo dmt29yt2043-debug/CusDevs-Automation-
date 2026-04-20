@@ -72,8 +72,8 @@ export default function SessionActions({
       <button
         onClick={handleDelete}
         disabled={deleting}
-        title="Move to trash (recoverable for 14 days)"
-        aria-label="Move session to trash"
+        title="Move to bin (recoverable for 14 days)"
+        aria-label="Move session to bin"
         className="p-2 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
       >
         <svg
@@ -86,14 +86,14 @@ export default function SessionActions({
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <polyline points="3 6 5 6 21 6" />
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-          <path d="M10 11v6" />
-          <path d="M14 11v6" />
-          <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+          <path d="M3 6h18" />
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          <line x1="10" y1="11" x2="10" y2="17" />
+          <line x1="14" y1="11" x2="14" y2="17" />
         </svg>
         <span className="text-sm font-medium">
-          {deleting ? "Deleting…" : "Delete"}
+          {deleting ? "Moving…" : "Delete"}
         </span>
       </button>
     </div>
