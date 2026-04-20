@@ -4,6 +4,7 @@ import { getAudioUrl } from "@/lib/storage";
 import Link from "next/link";
 import ClickMap from "@/components/admin/ClickMap";
 import TranscribeButton from "@/components/admin/TranscribeButton";
+import SessionActions from "@/components/admin/SessionActions";
 
 export const dynamic = "force-dynamic";
 
@@ -332,13 +333,19 @@ export default async function SessionDetailPage({
           <h1 className="text-2xl font-bold">Session Details</h1>
           <p className="text-gray-500 mt-1">{session.project.name}</p>
         </div>
-        <span
-          className={`text-sm px-3 py-1.5 rounded-full font-medium ${
-            statusColors[session.status] || "bg-gray-100"
-          }`}
-        >
-          {session.status}
-        </span>
+        <div className="flex flex-col items-end gap-3">
+          <span
+            className={`text-sm px-3 py-1.5 rounded-full font-medium ${
+              statusColors[session.status] || "bg-gray-100"
+            }`}
+          >
+            {session.status}
+          </span>
+          <SessionActions
+            sessionId={session.id}
+            initialIsFavorite={session.isFavorite}
+          />
+        </div>
       </div>
 
       {/* Meta cards */}
