@@ -83,8 +83,21 @@ async function main() {
   });
   console.log(`Project: ${project3.name} (${project3.id})`);
 
+  // Project 4: PulseUp V4
+  const project4 = await prisma.project.upsert({
+    where: { slug: "pulseup-v4-research" },
+    update: { testSiteUrl: "https://pulseup-v4.srv1362562.hstgr.cloud/" },
+    create: {
+      name: "Help us improve PulseUP",
+      slug: "pulseup-v4-research",
+      description: "We're building a better way to find activities for your family. Your feedback will shape the product.",
+      testSiteUrl: "https://pulseup-v4.srv1362562.hstgr.cloud/",
+    },
+  });
+  console.log(`Project: ${project4.name} (${project4.id})`);
+
   // Add scenario to all projects
-  for (const project of [project1, project2, project3]) {
+  for (const project of [project1, project2, project3, project4]) {
     const existing = await prisma.scenario.findFirst({
       where: { projectId: project.id, name: "Weekend activity discovery test v1" },
     });
