@@ -19,6 +19,7 @@ model Project {
   scenarios   Scenario[]
   participants Participant[]
   sessions    Session[]
+  subscribers Subscriber[]
 }
 
 model Scenario {
@@ -135,4 +136,30 @@ model AudioAsset {
   session     Session  @relation(fields: [sessionId], references: [id])
 
   @@index([sessionId])
+}
+
+enum SubscriberChannel {
+  email
+  whatsapp
+  both
+}
+
+model Subscriber {
+  id             String            @id @default(uuid())
+  projectId      String
+  sessionId      String?
+  participantId  String?
+  channel        SubscriberChannel
+  email          String?
+  whatsappE164   String?
+  notes          String?
+  unsubscribedAt DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  project        Project           @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+  @@index([sessionId])
+  @@index([email])
+  @@index([whatsappE164])
 }

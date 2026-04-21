@@ -16,7 +16,7 @@ Async UX research tool: participants browse a test site inside an iframe while a
 | AI | OpenAI Whisper (`whisper-1`) + GPT-4o-mini |
 | Process manager | PM2 (`ux-research` app, port 3001) |
 | Reverse proxy | Caddy (`research.srv1362562.hstgr.cloud`) |
-| Deploy | rsync → VPS (`root@187.77.18.20`, port 2222, key `~/.ssh/github_key`) |
+| Deploy | rsync → VPS (`root@srv1362562.hstgr.cloud`, key `~/.ssh/vps_hostinger`) |
 
 ---
 
@@ -121,7 +121,7 @@ On VPS: `/opt/ux-research/.env` (add new vars and `pm2 restart ux-research --upd
 | PK | pulsekids-research | pulseup.srv1362562.hstgr.cloud |
 | PU | pulseup-research | pulseup.me |
 | PU2 | pulseup-v2-research | pulseup-v2.srv1362562.hstgr.cloud |
-| PU4 | pulseup-v4-research | pulseup-v4.srv1362562.hstgr.cloud |
+| PU4 | pulseup-v4-research | pulseup.me (production) |
 
 Session codes are stable and survive deletion: `PU2-24`, `PK-3`, etc.
 
@@ -165,17 +165,20 @@ Defined in JSON: `message | button | rating | text_input | audio_prompt | wait_f
 cd "ux-research" && npx next build
 
 # Sync + deploy
-rsync -az -e "ssh -i ~/.ssh/github_key -p 2222" \
+rsync -az -e "ssh -i ~/.ssh/vps_hostinger" \
   --exclude node_modules --exclude .next --exclude .git \
   --exclude uploads --exclude '.env' \
-  ./ux-research/ root@187.77.18.20:/opt/ux-research/
+  ./ux-research/ root@srv1362562.hstgr.cloud:/opt/ux-research/
 
-ssh -i ~/.ssh/github_key -p 2222 root@187.77.18.20 \
+ssh -i ~/.ssh/vps_hostinger root@srv1362562.hstgr.cloud \
   'cd /opt/ux-research && npm run build && pm2 restart ux-research --update-env'
 
 # Schema changes: run locally first (points at VPS DB), then on VPS
 npx prisma db push
 npx prisma generate
+
+# Update DB project URLs after domain change (run locally)
+npx prisma db seed
 ```
 
 ---

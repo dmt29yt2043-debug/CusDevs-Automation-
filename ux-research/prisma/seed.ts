@@ -92,11 +92,11 @@ async function main() {
   });
   console.log(`Project: ${project3.name} (${project3.id})`);
 
-  // Project 4: PulseUp V4
+  // Project 4: PulseUp V4 (production — pulseup.me)
   const project4 = await prisma.project.upsert({
     where: { slug: "pulseup-v4-research" },
     update: {
-      testSiteUrl: "https://pulseup-v4.srv1362562.hstgr.cloud/",
+      testSiteUrl: "https://pulseup.me/",
       shortCode: "PU4",
     },
     create: {
@@ -104,7 +104,7 @@ async function main() {
       slug: "pulseup-v4-research",
       shortCode: "PU4",
       description: "We're building a better way to find activities for your family. Your feedback will shape the product.",
-      testSiteUrl: "https://pulseup-v4.srv1362562.hstgr.cloud/",
+      testSiteUrl: "https://pulseup.me/",
     },
   });
   console.log(`Project: ${project4.name} (${project4.id})`);
