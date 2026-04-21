@@ -1,12 +1,24 @@
-import type { QuizOption, ChildAge, Borough, Interest, Pain, Intent } from "./types";
+import type { QuizOption, ParentStatus, Gender, ChildAge, Borough, Interest } from "./types";
 
 // UI label → normalized value mapping for each question
 
+export const parentOptions: QuizOption<ParentStatus>[] = [
+  { label: "Yes, I'm a parent", value: "yes" },
+  { label: "No", value: "no" },
+];
+
+export const genderOptions: QuizOption<Gender>[] = [
+  { label: "Boy", value: "boy" },
+  { label: "Girl", value: "girl" },
+];
+
 export const childAgeOptions: QuizOption<ChildAge>[] = [
-  { label: "3-5 years", value: "3-5" },
-  { label: "6-8 years", value: "6-8" },
-  { label: "9-12 years", value: "9-12" },
-  { label: "13-14 years", value: "13-14" },
+  { label: "0-2", value: "0-2" },
+  { label: "3-5", value: "3-5" },
+  { label: "6-8", value: "6-8" },
+  { label: "9-12", value: "9-12" },
+  { label: "13-15", value: "13-15" },
+  { label: "16+", value: "16+" },
 ];
 
 export const boroughOptions: QuizOption<Borough>[] = [
@@ -28,18 +40,4 @@ export const interestOptions: QuizOption<Interest>[] = [
   { label: "Science & tech", value: "science" },
   { label: "Animals & nature", value: "animals" },
   { label: "Indoor play", value: "indoor_play" },
-];
-
-export const painOptions: QuizOption<Pain>[] = [
-  { label: "Too crowded", value: "crowded" },
-  { label: "Too far away", value: "too_far" },
-  { label: "Too expensive", value: "too_expensive" },
-  { label: "Boring options", value: "boring" },
-  { label: "Hard to choose", value: "hard_to_choose" },
-  { label: "Risky weather", value: "weather_risk" },
-];
-
-export const intentOptions: QuizOption<Intent>[] = [
-  { label: "Yes, show me recommendations", value: "yes" },
-  { label: "No, just browsing", value: "no" },
 ];
