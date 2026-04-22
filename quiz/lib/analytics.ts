@@ -4,7 +4,9 @@ type QuizEvent =
   | "quiz_started"
   | "quiz_step_completed"
   | "quiz_completed"
-  | "quiz_redirected";
+  | "quiz_redirected"
+  | "quiz_exited_not_parent"
+  | "quiz_child_added";
 
 interface EventPayload {
   event: QuizEvent;

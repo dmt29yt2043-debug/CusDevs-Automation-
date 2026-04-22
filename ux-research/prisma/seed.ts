@@ -47,10 +47,14 @@ async function main() {
   // Project 1: PulseKids (staging)
   const project1 = await prisma.project.upsert({
     where: { slug: "pulsekids-research" },
-    update: { testSiteUrl: "https://pulseup.srv1362562.hstgr.cloud/" },
+    update: {
+      testSiteUrl: "https://pulseup.srv1362562.hstgr.cloud/",
+      shortCode: "PK",
+    },
     create: {
       name: "PulseKids Research",
       slug: "pulsekids-research",
+      shortCode: "PK",
       description: "UX research for a parenting product — finding weekend activities for kids.",
       testSiteUrl: "https://pulseup.srv1362562.hstgr.cloud/",
     },
@@ -60,10 +64,11 @@ async function main() {
   // Project 2: PulseUp (production)
   const project2 = await prisma.project.upsert({
     where: { slug: "pulseup-research" },
-    update: { testSiteUrl: "https://pulseup.me/" },
+    update: { testSiteUrl: "https://pulseup.me/", shortCode: "PU" },
     create: {
       name: "PulseUp Research",
       slug: "pulseup-research",
+      shortCode: "PU",
       description: "UX research for PulseUp — finding weekend activities for kids.",
       testSiteUrl: "https://pulseup.me/",
     },
@@ -73,25 +78,33 @@ async function main() {
   // Project 3: PulseUp V2
   const project3 = await prisma.project.upsert({
     where: { slug: "pulseup-v2-research" },
-    update: { testSiteUrl: "https://pulseup-v2.srv1362562.hstgr.cloud/" },
+    update: {
+      testSiteUrl: "https://pulseup-v2.srv1362562.hstgr.cloud/",
+      shortCode: "PU2",
+    },
     create: {
       name: "PulseUp V2 Research",
       slug: "pulseup-v2-research",
+      shortCode: "PU2",
       description: "UX research for PulseUp V2 — new dark theme version.",
       testSiteUrl: "https://pulseup-v2.srv1362562.hstgr.cloud/",
     },
   });
   console.log(`Project: ${project3.name} (${project3.id})`);
 
-  // Project 4: PulseUp V4
+  // Project 4: PulseUp V4 (production — pulseup.me)
   const project4 = await prisma.project.upsert({
     where: { slug: "pulseup-v4-research" },
-    update: { testSiteUrl: "https://pulseup-v4.srv1362562.hstgr.cloud/" },
+    update: {
+      testSiteUrl: "https://pulseup.me/",
+      shortCode: "PU4",
+    },
     create: {
       name: "Help us improve PulseUP",
       slug: "pulseup-v4-research",
+      shortCode: "PU4",
       description: "We're building a better way to find activities for your family. Your feedback will shape the product.",
-      testSiteUrl: "https://pulseup-v4.srv1362562.hstgr.cloud/",
+      testSiteUrl: "https://pulseup.me/",
     },
   });
   console.log(`Project: ${project4.name} (${project4.id})`);

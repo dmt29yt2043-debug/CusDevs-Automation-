@@ -1,6 +1,12 @@
 // Normalized values — these are the only values that leave the quiz
 
-export const CHILD_AGE_OPTIONS = ["3-5", "6-8", "9-12", "13-14"] as const;
+export const PARENT_OPTIONS = ["yes", "no"] as const;
+export type ParentStatus = (typeof PARENT_OPTIONS)[number];
+
+export const GENDER_OPTIONS = ["boy", "girl"] as const;
+export type Gender = (typeof GENDER_OPTIONS)[number];
+
+export const CHILD_AGE_OPTIONS = ["0-2", "3-5", "6-8", "9-12", "13-15", "16+"] as const;
 export type ChildAge = (typeof CHILD_AGE_OPTIONS)[number];
 
 export const BOROUGH_OPTIONS = [
@@ -26,34 +32,36 @@ export const INTEREST_OPTIONS = [
 ] as const;
 export type Interest = (typeof INTEREST_OPTIONS)[number];
 
-export const PAIN_OPTIONS = [
-  "crowded",
-  "too_far",
-  "too_expensive",
-  "boring",
-  "hard_to_choose",
-  "weather_risk",
-] as const;
-export type Pain = (typeof PAIN_OPTIONS)[number];
+// One child entry
+export interface ChildInfo {
+  id: string;
+  gender: Gender | null;
+  child_age: ChildAge | null;
+}
 
-export const INTENT_OPTIONS = ["yes", "no"] as const;
-export type Intent = (typeof INTENT_OPTIONS)[number];
+export function newChild(): ChildInfo {
+  return {
+    id: Math.random().toString(36).slice(2, 10),
+    gender: null,
+    child_age: null,
+  };
+}
 
 // Full quiz answers
 export interface QuizAnswers {
-  child_age: ChildAge | null;
+  parent: ParentStatus | null;
+  children: ChildInfo[];
   borough: Borough | null;
+  custom_area: string;
   interests: Interest[];
-  pain: Pain | null;
-  intent: Intent | null;
 }
 
 export const INITIAL_ANSWERS: QuizAnswers = {
-  child_age: null,
+  parent: null,
+  children: [{ id: "c1", gender: null, child_age: null }],
   borough: null,
+  custom_area: "",
   interests: [],
-  pain: null,
-  intent: null,
 };
 
 // UI option: what user sees → what gets stored

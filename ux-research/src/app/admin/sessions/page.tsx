@@ -1,14 +1,10 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
+import SessionsTable, {
+  type SessionRow,
+} from "@/components/admin/SessionsTable";
 
 export const dynamic = "force-dynamic";
-
-const statusColors: Record<string, string> = {
-  started: "bg-yellow-100 text-yellow-700",
-  in_progress: "bg-blue-100 text-blue-700",
-  completed: "bg-green-100 text-green-700",
-  abandoned: "bg-red-100 text-red-700",
-};
 
 export default async function SessionsPage({
   searchParams,
@@ -24,9 +20,12 @@ export default async function SessionsPage({
   });
 
   const sessions = await prisma.session.findMany({
-    where: projectFilter ? { projectId: projectFilter } : undefined,
+    where: {
+      deletedAt: null,
+      ...(projectFilter ? { projectId: projectFilter } : {}),
+    },
     include: {
-      project: { select: { name: true } },
+      project: { select: { name: true, shortCode: true, slug: true } },
       participant: { select: { screenerAnswersJson: true } },
       _count: { select: { events: true, responses: true, audioAssets: true } },
     },
@@ -34,7 +33,32 @@ export default async function SessionsPage({
     take: 100,
   });
 
+  const trashCount = await prisma.session.count({
+    where: { deletedAt: { not: null } },
+  });
+
   const activeProject = projects.find((p) => p.id === projectFilter);
+
+  const rows: SessionRow[] = sessions.map((s) => {
+    const screener = s.participant?.screenerAnswersJson as
+      | Record<string, string>
+      | null;
+    const code =
+      s.project.shortCode || s.project.slug.slice(0, 3).toUpperCase();
+    return {
+      id: s.id,
+      code: s.seqNumber != null ? `${code}-${s.seqNumber}` : "—",
+      status: s.status,
+      startedAt: s.startedAt.toISOString(),
+      durationSec: s.durationSec,
+      isFavorite: s.isFavorite,
+      projectName: s.project.name,
+      eventsCount: s._count.events,
+      responsesCount: s._count.responses,
+      audioCount: s._count.audioAssets,
+      participantCity: screener?.city ?? null,
+    };
+  });
 
   return (
     <div>
@@ -47,6 +71,19 @@ export default async function SessionsPage({
             </span>
           )}
         </h1>
+        <Link
+          href="/admin/sessions/bin"
+          className="text-sm px-3.5 py-1.5 rounded-lg font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors flex items-center gap-2"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <line x1="10" y1="11" x2="10" y2="17" />
+            <line x1="14" y1="11" x2="14" y2="17" />
+          </svg>
+          Bin {trashCount > 0 && <span className="bg-gray-300 text-gray-700 text-xs px-1.5 rounded-full">{trashCount}</span>}
+        </Link>
       </div>
 
       {/* Project filter tabs */}
@@ -76,73 +113,7 @@ export default async function SessionsPage({
         ))}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-100 text-sm text-gray-500">
-              <th className="text-left px-4 py-3 font-medium">#</th>
-              {!projectFilter && <th className="text-left px-4 py-3 font-medium">Project</th>}
-              <th className="text-left px-4 py-3 font-medium">Status</th>
-              <th className="text-left px-4 py-3 font-medium">Duration</th>
-              <th className="text-left px-4 py-3 font-medium">Started</th>
-              <th className="text-left px-4 py-3 font-medium">Events</th>
-              <th className="text-left px-4 py-3 font-medium">Responses</th>
-              <th className="text-left px-4 py-3 font-medium">Audio</th>
-              <th className="text-left px-4 py-3 font-medium">Participant</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sessions.map((s, i) => {
-              const screener = s.participant?.screenerAnswersJson as Record<string, string> | null;
-              const num = sessions.length - i;
-              return (
-                <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/sessions/${s.id}`}
-                      className="text-sm text-blue-600 hover:underline font-medium"
-                    >
-                      #{num}
-                    </Link>
-                  </td>
-                  {!projectFilter && (
-                    <td className="px-4 py-3 text-sm">{s.project.name}</td>
-                  )}
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        statusColors[s.status] || "bg-gray-100"
-                      }`}
-                    >
-                      {s.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
-                    {s.durationSec ? `${Math.round(s.durationSec / 60)}m ${s.durationSec % 60}s` : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
-                    {new Date(s.startedAt).toLocaleString("en-US", {
-                      month: "short", day: "numeric",
-                      hour: "2-digit", minute: "2-digit", hour12: false,
-                    })}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{s._count.events}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{s._count.responses}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{s._count.audioAssets}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
-                    {screener?.city || "—"}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {sessions.length === 0 && (
-          <p className="text-gray-400 text-center py-12">
-            No sessions yet. Complete the participant flow to create one.
-          </p>
-        )}
-      </div>
+      <SessionsTable sessions={rows} showProjectColumn={!projectFilter} />
     </div>
   );
 }

@@ -8,17 +8,29 @@ export function buildRedirectUrl(answers: QuizAnswers): string | null {
   if (!valid) return null;
 
   const url = new URL(RESULTS_URL);
+  const children = answers.children;
+  const first = children[0];
 
   url.searchParams.set("source", "quiz");
-  url.searchParams.set("child_age", answers.child_age!);
+
+  // Back-compat: first child as plain gender / child_age
+  url.searchParams.set("gender", first.gender!);
+  url.searchParams.set("child_age", first.child_age!);
+
+  // Full list of children: "boy:3-5,girl:6-8"
+  const childrenParam = children
+    .map((c) => `${c.gender}:${c.child_age}`)
+    .join(",");
+  url.searchParams.set("children", childrenParam);
+
   url.searchParams.set("borough", answers.borough!);
+  if (answers.borough === "other" && answers.custom_area.trim()) {
+    url.searchParams.set("custom_area", answers.custom_area.trim());
+  }
 
   // Default interests to outdoor if empty
   const interests = answers.interests.length > 0 ? answers.interests : ["outdoor"];
   url.searchParams.set("interests", interests.join(","));
-
-  url.searchParams.set("pain", answers.pain!);
-  url.searchParams.set("intent", answers.intent!);
 
   return url.toString();
 }

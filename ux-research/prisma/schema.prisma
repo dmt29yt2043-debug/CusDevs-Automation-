@@ -11,6 +11,7 @@ model Project {
   id          String        @id @default(uuid())
   name        String
   slug        String        @unique
+  shortCode   String?       @unique
   description String?
   testSiteUrl String?
   createdAt   DateTime      @default(now())
@@ -18,6 +19,7 @@ model Project {
   scenarios   Scenario[]
   participants Participant[]
   sessions    Session[]
+  subscribers Subscriber[]
 }
 
 model Scenario {
@@ -62,10 +64,13 @@ model Session {
   projectId     String
   scenarioId    String
   participantId String?
+  seqNumber     Int?
   status        SessionStatus @default(started)
   startedAt     DateTime      @default(now())
   endedAt       DateTime?
   durationSec   Int?
+  isFavorite    Boolean       @default(false)
+  deletedAt     DateTime?
   metadataJson  Json?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -76,9 +81,11 @@ model Session {
   responses     Response[]
   audioAssets   AudioAsset[]
 
+  @@unique([projectId, seqNumber])
   @@index([projectId])
   @@index([scenarioId])
   @@index([participantId])
+  @@index([deletedAt])
 }
 
 model Event {
@@ -124,8 +131,35 @@ model AudioAsset {
   mimeType    String?
   durationSec Float?
   transcript  String?
+  summary     String?
   createdAt   DateTime @default(now())
   session     Session  @relation(fields: [sessionId], references: [id])
 
   @@index([sessionId])
+}
+
+enum SubscriberChannel {
+  email
+  whatsapp
+  both
+}
+
+model Subscriber {
+  id             String            @id @default(uuid())
+  projectId      String
+  sessionId      String?
+  participantId  String?
+  channel        SubscriberChannel
+  email          String?
+  whatsappE164   String?
+  notes          String?
+  unsubscribedAt DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  project        Project           @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+  @@index([sessionId])
+  @@index([email])
+  @@index([whatsappE164])
 }
