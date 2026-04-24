@@ -10,13 +10,15 @@ export async function POST(req: Request) {
 
   const created = await prisma.event.createMany({
     data: events.map((e: Record<string, unknown>) => ({
-      sessionId: e.sessionId as string,
-      eventType: e.eventType as string,
-      pageUrl: (e.pageUrl as string) || null,
+      sessionId:       e.sessionId       as string,
+      eventType:       e.eventType       as string,
+      pageUrl:         (e.pageUrl        as string)  || null,
       elementSelector: (e.elementSelector as string) || null,
-      x: (e.x as number) || null,
-      y: (e.y as number) || null,
-      payloadJson: (e.payloadJson ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+      elementType:     (e.elementType    as string)  || null,
+      sequenceIndex:   typeof e.sequenceIndex === "number" ? e.sequenceIndex : null,
+      x:               (e.x as number) || null,
+      y:               (e.y as number) || null,
+      payloadJson:     (e.payloadJson ?? Prisma.JsonNull) as Prisma.InputJsonValue,
     })),
   });
 

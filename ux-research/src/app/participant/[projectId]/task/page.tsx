@@ -77,12 +77,17 @@ export default function TaskPage() {
             }}
           >
             <p className="leading-relaxed text-base" style={{ color: "#d1d5db" }}>
-              You want to find something fun to do with your child
-              in the <strong style={{ color: "#fff" }}>next few days</strong>.
+              This is the <strong style={{ color: "#fff" }}>final part.</strong>
             </p>
             <p className="leading-relaxed text-base" style={{ color: "#d1d5db" }}>
-              You will now see a website. Try to find a suitable activity.
-              Interact with it as you normally would.
+              You&apos;ll explore a website and complete a few simple tasks —
+              like <strong style={{ color: "#fff" }}>finding somewhere to go with your child.</strong>
+            </p>
+            <p className="leading-relaxed text-base" style={{ color: "#d1d5db" }}>
+              As you go, please{" "}
+              <strong style={{ color: "#fff" }}>speak out loud</strong> and explain
+              what you&apos;re doing, what you&apos;re thinking, and why you make
+              certain choices.
             </p>
             <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
               A research assistant will appear in the bottom right corner — it

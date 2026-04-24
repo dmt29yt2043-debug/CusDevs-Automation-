@@ -18,8 +18,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin/sessions" className="text-gray-600 hover:text-gray-900">
               Sessions
             </Link>
-            <Link href="/admin/subscribers" className="text-gray-600 hover:text-gray-900">
-              Subscribers
+            <Link href="/admin/participants" className="text-gray-600 hover:text-gray-900 font-medium text-purple-600">
+              Participants
             </Link>
           </div>
         </div>
